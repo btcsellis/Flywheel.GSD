@@ -392,95 +392,107 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
 
         {/* Status Stepper */}
         <div className="p-4 bg-zinc-900 rounded border border-zinc-800">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center">
             {WORKFLOW_STEPS.map((step, index) => {
               const isComplete = index < currentStepIndex;
               const isCurrent = index === currentStepIndex;
+              const isAfterCurrent = index === currentStepIndex + 1;
+              const showActionButton = isCurrent && formData.status !== 'done';
 
               return (
-                <div key={step.status} className="flex items-center flex-1">
+                <div key={step.status} className="flex items-center">
+                  {/* Step circle and label */}
                   <button
                     type="button"
                     onClick={() => setStatus(step.status)}
-                    className={`
-                      w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
-                      ${isBlocked && isCurrent
-                        ? 'bg-red-500 text-white'
-                        : isCurrent
-                          ? 'bg-zinc-100 text-zinc-900 ring-2 ring-zinc-100/50'
-                          : isComplete
-                            ? 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
-                            : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-400'
-                      }
-                    `}
-                    title={step.label}
+                    className="flex flex-col items-center gap-1"
                   >
-                    {step.num}
-                  </button>
-                  {index < WORKFLOW_STEPS.length - 1 && (
                     <div
-                      className={`flex-1 h-0.5 mx-1 ${
-                        index < currentStepIndex ? 'bg-zinc-600' : 'bg-zinc-800'
-                      }`}
-                    />
+                      className={`
+                        w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all
+                        ${isBlocked && isCurrent
+                          ? 'bg-red-500 text-white'
+                          : isCurrent
+                            ? 'bg-zinc-100 text-zinc-900'
+                            : isComplete
+                              ? 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+                              : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-zinc-400'
+                        }
+                      `}
+                    >
+                      {step.num}
+                    </div>
+                    <span className={`text-xs ${isCurrent ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                      {step.label}
+                    </span>
+                  </button>
+
+                  {/* Connector or Action Button */}
+                  {index < WORKFLOW_STEPS.length - 1 && (
+                    <>
+                      {showActionButton ? (
+                        /* Action button between current and next */
+                        <div className="relative mx-2" ref={launchMenuRef}>
+                          <button
+                            onClick={() => setLaunchMenuOpen(!launchMenuOpen)}
+                            disabled={launching}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D97757] text-white rounded text-xs font-medium hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
+                          >
+                            <span>{getNextStatusLabel(formData.status)}</span>
+                            <svg className={`w-3 h-3 transition-transform ${launchMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+
+                          {launchMenuOpen && (
+                            <div className="absolute left-0 mt-1 w-56 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-700">
+                                Launch with
+                              </div>
+                              {LAUNCH_OPTIONS.map((option) => (
+                                <button
+                                  key={option.id}
+                                  onClick={() => {
+                                    setLaunchMenuOpen(false);
+                                    handleLaunchClaude(option.reuseSession);
+                                  }}
+                                  disabled={launching}
+                                  className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                                >
+                                  {option.label}
+                                </button>
+                              ))}
+                              <div className="border-t border-zinc-700">
+                                <button
+                                  onClick={() => {
+                                    setLaunchMenuOpen(false);
+                                    setStatus(isBlocked ? 'created' : 'blocked');
+                                  }}
+                                  className={`w-full px-3 py-2 text-left text-sm transition-colors ${
+                                    isBlocked
+                                      ? 'text-green-400 hover:bg-zinc-700'
+                                      : 'text-red-400 hover:bg-zinc-700'
+                                  }`}
+                                >
+                                  {isBlocked ? 'Unblock' : 'Mark as Blocked'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Regular connector line */
+                        <div
+                          className={`w-8 h-0.5 mx-1 ${
+                            index < currentStepIndex ? 'bg-zinc-600' : 'bg-zinc-800'
+                          }`}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               );
             })}
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            {WORKFLOW_STEPS.map((step) => (
-              <div key={step.status} className="flex-1 text-center">
-                <span className="text-[10px] text-zinc-500">{step.label}</span>
-              </div>
-            ))}
-          </div>
-          {/* Blocked toggle and Launch buttons */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800">
-            <button
-              type="button"
-              onClick={() => setStatus(isBlocked ? 'created' : 'blocked')}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                isBlocked
-                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                  : 'bg-zinc-800 text-zinc-500 hover:text-zinc-400'
-              }`}
-            >
-              {isBlocked ? 'Blocked' : 'Mark Blocked'}
-            </button>
-
-            {formData.status !== 'done' && (
-              <div className="relative" ref={launchMenuRef}>
-                <button
-                  onClick={() => setLaunchMenuOpen(!launchMenuOpen)}
-                  disabled={launching}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#D97757] text-white rounded text-xs font-medium hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
-                >
-                  <span>→ {getNextStatusLabel(formData.status)}</span>
-                  <svg className={`w-3 h-3 transition-transform ${launchMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {launchMenuOpen && (
-                  <div className="absolute right-0 mt-1 w-56 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden">
-                    {LAUNCH_OPTIONS.map((option) => (
-                      <button
-                        key={option.id}
-                        onClick={() => {
-                          setLaunchMenuOpen(false);
-                          handleLaunchClaude(option.reuseSession);
-                        }}
-                        disabled={launching}
-                        className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
