@@ -21,7 +21,7 @@ function Nav() {
           <div className="flex items-center gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2 text-lg font-bold text-zinc-100 tracking-tight"
+              className="flex items-center gap-2 text-xl font-bold text-zinc-100 tracking-tight"
             >
               FLYWHEEL
               <span className="text-[10px] font-normal text-zinc-500 uppercase tracking-widest">

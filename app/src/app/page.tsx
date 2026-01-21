@@ -12,11 +12,11 @@ const AREAS: { key: Area; label: string; accent: string; bg: string }[] = [
 ];
 
 const WORKFLOW_STEPS: { status: WorkItemStatus; label: string; num: string }[] = [
-  { status: 'created', label: 'Created', num: '01' },
-  { status: 'goals-set', label: 'Goals Set', num: '02' },
+  { status: 'created', label: 'New', num: '01' },
+  { status: 'goals-set', label: 'Defined', num: '02' },
   { status: 'planned', label: 'Planned', num: '03' },
   { status: 'executing', label: 'Executing', num: '04' },
-  { status: 'verifying', label: 'Verifying', num: '05' },
+  { status: 'verifying', label: 'Review', num: '05' },
 ];
 
 function getArea(project: string): Area {
@@ -57,22 +57,12 @@ export default async function Dashboard() {
       />
 
       <div className="relative">
-        {/* Header */}
-        <header className="mb-6">
-          <div className="flex items-baseline gap-3">
-            <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">
-              FLYWHEEL
-            </h1>
-            <span className="text-xs text-zinc-500 uppercase tracking-widest">
-              Work Pipeline
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-4 text-xs text-zinc-500">
-            <span>{allItems.length} items</span>
-            <span className="text-zinc-700">|</span>
-            <span className="text-emerald-500">{allItems.filter(i => i.metadata.status === 'executing').length} executing</span>
-          </div>
-        </header>
+        {/* Stats */}
+        <div className="mb-6 flex items-center gap-4 text-xs text-zinc-500">
+          <span>{allItems.length} items</span>
+          <span className="text-zinc-700">|</span>
+          <span className="text-emerald-500">{allItems.filter(i => i.metadata.status === 'executing').length} executing</span>
+        </div>
 
         {/* Kanban Board */}
         <div className="overflow-x-auto">

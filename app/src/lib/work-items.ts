@@ -2,12 +2,12 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export type WorkItemStatus =
-  | 'created'    // Just created, needs goals
-  | 'goals-set'  // Success criteria defined, ready to plan
+  | 'created'    // New, needs definition
+  | 'goals-set'  // Defined with success criteria, ready to plan
   | 'planned'    // Plan created, ready to execute
   | 'executing'  // Actively being worked on
-  | 'verifying'  // Execution done, verifying success criteria
-  | 'done'       // Verified, shipped, cleaned up
+  | 'verifying'  // For review - awaiting human approval
+  | 'done'       // Approved, shipped, cleaned up
   | 'blocked';   // Stuck, needs intervention
 
 export interface WorkItemMetadata {
@@ -216,6 +216,10 @@ export async function createWorkItem(
     successCriteria: string[];
     dueDate?: string;
     important?: boolean;
+    plan?: string[];
+    verification?: string;
+    context?: string;
+    files?: string[];
     notes?: string;
   }
 ): Promise<string | null> {
@@ -227,6 +231,26 @@ export async function createWorkItem(
     .slice(0, 40);
   const filename = `${date}-${slug}.md`;
   const id = `${slug}-${Math.floor(Math.random() * 900) + 100}`;
+
+  const planSection = data.plan && data.plan.length > 0
+    ? `\n## Plan\n\n${data.plan.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n`
+    : '';
+
+  const verificationSection = data.verification
+    ? `\n## Verification\n\n${data.verification}\n`
+    : '';
+
+  const contextSection = data.context
+    ? `\n## Context\n\n${data.context}\n`
+    : '';
+
+  const filesSection = data.files && data.files.length > 0
+    ? `\n## Files\n\n${data.files.map(f => `- ${f}`).join('\n')}\n`
+    : '';
+
+  const notesSection = data.notes
+    ? `\n## Notes\n\n${data.notes}\n`
+    : '';
 
   const content = `# ${data.title}
 
@@ -244,11 +268,7 @@ ${data.description}
 ## Success Criteria
 
 ${data.successCriteria.map(c => `- [ ] ${c}`).join('\n')}
-
-## Notes
-
-${data.notes || ''}
-
+${planSection}${verificationSection}${contextSection}${filesSection}${notesSection}
 ## Execution Log
 
 - ${new Date().toISOString()} Work item created
