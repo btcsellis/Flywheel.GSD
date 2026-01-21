@@ -90,4 +90,10 @@ Let's work a little on contrast and sizing. My eyes are not what they used to be
 - 2026-01-21T22:10:00.000Z Made progress bars thicker - h-1→h-1.5 (6px)
 - 2026-01-21T22:11:00.000Z Build verified - npm run build passed with no errors
 - 2026-01-21T22:11:30.000Z All success criteria verified
-- 2026-01-21T22:11:30.000Z Ready for /flywheel-ship
+- 2026-01-21T22:20:00.000Z Fixed layout issues after browser review:
+  - Widened board layout (max-w-7xl → max-w-[1800px])
+  - Added project name truncation to prevent card overflow
+  - Added status value normalization (old→new mappings)
+  - Updated status types in page.tsx and work-item-detail.tsx
+- 2026-01-21T22:25:00.000Z User verified changes in browser - approved
+- 2026-01-21T22:25:00.000Z Ready for /flywheel-ship
