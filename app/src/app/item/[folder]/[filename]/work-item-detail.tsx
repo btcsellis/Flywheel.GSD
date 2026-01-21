@@ -15,11 +15,11 @@ const AREAS = [
 type Area = typeof AREAS[number]['value'];
 
 const WORKFLOW_STEPS: { status: WorkItemStatus; label: string; num: string }[] = [
-  { status: 'created', label: 'New', num: '1' },
-  { status: 'goals-set', label: 'Defined', num: '2' },
+  { status: 'new', label: 'New', num: '1' },
+  { status: 'defined', label: 'Defined', num: '2' },
   { status: 'planned', label: 'Planned', num: '3' },
   { status: 'executing', label: 'Executing', num: '4' },
-  { status: 'verifying', label: 'Review', num: '5' },
+  { status: 'review', label: 'Review', num: '5' },
   { status: 'done', label: 'Done', num: '✓' },
 ];
 
@@ -372,13 +372,13 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
   return (
     <div className="max-w-3xl">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-zinc-500 mb-6">
-        <Link href="/" className="hover:text-zinc-300 transition-colors">Board</Link>
+      <div className="flex items-center gap-2 text-sm text-zinc-400 mb-6">
+        <Link href="/" className="hover:text-zinc-200 transition-colors">Board</Link>
         <span>/</span>
         <span style={{ color: accent }}>{formData.area}/{formData.project}</span>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Title */}
         <div>
           <input
@@ -391,25 +391,24 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
         </div>
 
         {/* Status Stepper */}
-        <div className="p-4 bg-zinc-900 rounded border border-zinc-800">
-          <div className="flex items-center">
+        <div className="p-4 bg-zinc-900 rounded border border-zinc-800 flex justify-center">
+          <div className="flex items-start">
             {WORKFLOW_STEPS.map((step, index) => {
               const isComplete = index < currentStepIndex;
               const isCurrent = index === currentStepIndex;
-              const isAfterCurrent = index === currentStepIndex + 1;
               const showActionButton = isCurrent && formData.status !== 'done';
 
               return (
-                <div key={step.status} className="flex items-center">
+                <div key={step.status} className="flex items-start">
                   {/* Step circle and label */}
                   <button
                     type="button"
                     onClick={() => setStatus(step.status)}
-                    className="flex flex-col items-center gap-1"
+                    className="flex flex-col items-center gap-1.5 min-w-[60px]"
                   >
                     <div
                       className={`
-                        w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all
+                        w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all
                         ${isBlocked && isCurrent
                           ? 'bg-red-500 text-white'
                           : isCurrent
@@ -422,31 +421,31 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                     >
                       {step.num}
                     </div>
-                    <span className={`text-xs ${isCurrent ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                    <span className={`text-sm ${isCurrent ? 'text-zinc-200' : 'text-zinc-400'}`}>
                       {step.label}
                     </span>
                   </button>
 
                   {/* Connector or Action Button */}
                   {index < WORKFLOW_STEPS.length - 1 && (
-                    <>
+                    <div className="flex items-center h-10">
                       {showActionButton ? (
                         /* Action button between current and next */
-                        <div className="relative mx-2" ref={launchMenuRef}>
+                        <div className="relative flex justify-center" ref={launchMenuRef}>
                           <button
                             onClick={() => setLaunchMenuOpen(!launchMenuOpen)}
                             disabled={launching}
-                            className="flex items-center justify-center w-8 h-8 bg-[#D97757] text-white rounded-full hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
+                            className="flex items-center justify-center w-10 h-10 bg-[#D97757] text-white rounded-full hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
                             title={getNextStatusLabel(formData.status)}
                           >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                             </svg>
                           </button>
 
                           {launchMenuOpen && (
                             <div className="absolute left-0 mt-1 w-56 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden">
-                              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-zinc-500 border-b border-zinc-700">
+                              <div className="px-3 py-2 text-[14px] uppercase tracking-wider text-zinc-400 border-b border-zinc-700">
                                 Launch with
                               </div>
                               {LAUNCH_OPTIONS.map((option) => (
@@ -466,7 +465,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                                 <button
                                   onClick={() => {
                                     setLaunchMenuOpen(false);
-                                    setStatus(isBlocked ? 'created' : 'blocked');
+                                    setStatus(isBlocked ? 'new' : 'blocked');
                                   }}
                                   className={`w-full px-3 py-2 text-left text-sm transition-colors ${
                                     isBlocked
@@ -483,12 +482,12 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                       ) : (
                         /* Regular connector line */
                         <div
-                          className={`w-8 h-0.5 mx-1 ${
+                          className={`w-8 h-0.5 mx-2 ${
                             index < currentStepIndex ? 'bg-zinc-600' : 'bg-zinc-800'
                           }`}
                         />
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               );
@@ -497,9 +496,9 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
         </div>
 
         {/* Metadata Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-900 rounded border border-zinc-800">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-5 bg-zinc-900 rounded border border-zinc-800">
           <div>
-            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1">
+            <label className="block text-[14px] font-medium text-zinc-400 uppercase tracking-wider mb-1">
               Area
             </label>
             <select
@@ -514,7 +513,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           </div>
 
           <div>
-            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1">
+            <label className="block text-[14px] font-medium text-zinc-400 uppercase tracking-wider mb-1">
               Project
             </label>
             <input
@@ -527,7 +526,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           </div>
 
           <div>
-            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1">
+            <label className="block text-[14px] font-medium text-zinc-400 uppercase tracking-wider mb-1">
               Due Date
             </label>
             <input
@@ -555,27 +554,27 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Description
           </label>
           <AutoResizeTextarea
             value={formData.description}
             onChange={v => setFormData({ ...formData, description: v })}
             placeholder="What needs to be done and why? Include background, constraints, and acceptance criteria."
-            className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
             minRows={3}
           />
         </div>
 
         {/* Success Criteria */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Success Criteria
-            <span className="ml-2 text-zinc-600 normal-case">
+            <span className="ml-2 text-zinc-500 normal-case">
               ({formData.successCriteria.filter(c => c.completed && c.text.trim()).length}/{formData.successCriteria.filter(c => c.text.trim()).length})
             </span>
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Specific, verifiable outcomes that define when this work is complete.</p>
+          <p className="text-[15px] text-zinc-500 mb-2">Specific, verifiable outcomes that define when this work is complete.</p>
           <div className="space-y-2">
             {formData.successCriteria.map((criterion, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -589,7 +588,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                   type="text"
                   value={criterion.text}
                   onChange={e => updateCriterion(index, 'text', e.target.value)}
-                  className={`flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-sm focus:outline-none focus:border-zinc-600 ${criterion.completed ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}
+                  className={`flex-1 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-sm focus:outline-none focus:border-zinc-600 ${criterion.completed ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}
                   placeholder="Success criterion"
                 />
                 <button
@@ -604,7 +603,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             <button
               type="button"
               onClick={addCriterion}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
             >
               + Add criterion
             </button>
@@ -613,19 +612,19 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
 
         {/* Plan */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Plan
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Ordered steps to accomplish this work. Claude Code will follow these.</p>
+          <p className="text-[15px] text-zinc-500 mb-2">Ordered steps to accomplish this work. Claude Code will follow these.</p>
           <div className="space-y-2">
             {formData.plan.map((step, index) => (
               <div key={index} className="flex items-center gap-2">
-                <span className="text-xs text-zinc-600 w-6">{index + 1}.</span>
+                <span className="text-sm text-zinc-500 w-6">{index + 1}.</span>
                 <input
                   type="text"
                   value={step}
                   onChange={e => updatePlanStep(index, e.target.value)}
-                  className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-sm text-zinc-300 focus:outline-none focus:border-zinc-600"
+                  className="flex-1 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-sm text-zinc-300 focus:outline-none focus:border-zinc-600"
                   placeholder="Step description"
                 />
                 <button
@@ -640,7 +639,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             <button
               type="button"
               onClick={addPlanStep}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
             >
               + Add step
             </button>
@@ -649,40 +648,40 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
 
         {/* Verification */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Verification
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">How to verify each success criterion is met. Commands, tests, manual checks.</p>
+          <p className="text-[15px] text-zinc-500 mb-2">How to verify each success criterion is met. Commands, tests, manual checks.</p>
           <AutoResizeTextarea
             value={formData.verification}
             onChange={v => setFormData({ ...formData, verification: v })}
             placeholder="Run `npm test` to verify tests pass&#10;Check /api/health returns 200&#10;Manually verify the UI renders correctly"
-            className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-zinc-400 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-600 font-mono"
+            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-300 text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-600 font-mono"
             minRows={3}
           />
         </div>
 
         {/* Context */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Context
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Background info, dependencies, related issues, links, architectural decisions.</p>
+          <p className="text-[15px] text-zinc-500 mb-2">Background info, dependencies, related issues, links, architectural decisions.</p>
           <AutoResizeTextarea
             value={formData.context}
             onChange={v => setFormData({ ...formData, context: v })}
             placeholder="Related to issue #123&#10;Depends on the auth refactor being complete&#10;See design doc: https://..."
-            className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-zinc-400 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-300 text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
             minRows={2}
           />
         </div>
 
         {/* Files */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Files
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Key files to modify or review. Helps Claude Code focus.</p>
+          <p className="text-[15px] text-zinc-500 mb-2">Key files to modify or review. Helps Claude Code focus.</p>
           <div className="space-y-2">
             {formData.files.map((file, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -690,7 +689,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                   type="text"
                   value={file}
                   onChange={e => updateFile(index, e.target.value)}
-                  className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-sm font-mono text-zinc-400 focus:outline-none focus:border-zinc-600"
+                  className="flex-1 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-sm font-mono text-zinc-300 focus:outline-none focus:border-zinc-600"
                   placeholder="src/components/Button.tsx"
                 />
                 <button
@@ -705,7 +704,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             <button
               type="button"
               onClick={addFile}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
             >
               + Add file
             </button>
@@ -714,24 +713,24 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
 
         {/* Notes */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Notes
           </label>
           <AutoResizeTextarea
             value={formData.notes}
             onChange={v => setFormData({ ...formData, notes: v })}
             placeholder="Additional thoughts, considerations, open questions..."
-            className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-zinc-400 text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-zinc-300 text-sm placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
             minRows={2}
           />
         </div>
 
         {/* Execution Log */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Execution Log
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Timestamped record of work done. Claude Code appends entries here.</p>
+          <p className="text-[15px] text-zinc-500 mb-2">Timestamped record of work done. Claude Code appends entries here.</p>
           <div className="space-y-2">
             {formData.executionLog.map((entry, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -739,7 +738,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                   type="text"
                   value={entry}
                   onChange={e => updateLogEntry(index, e.target.value)}
-                  className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded text-sm font-mono text-zinc-500 focus:outline-none focus:border-zinc-600"
+                  className="flex-1 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded text-sm font-mono text-zinc-400 focus:outline-none focus:border-zinc-600"
                 />
                 <button
                   type="button"
@@ -753,7 +752,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             <button
               type="button"
               onClick={addLogEntry}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
             >
               + Add log entry
             </button>

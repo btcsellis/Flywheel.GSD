@@ -2,13 +2,23 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export type WorkItemStatus =
-  | 'created'    // New, needs definition
-  | 'goals-set'  // Defined with success criteria, ready to plan
+  | 'new'        // New, needs definition
+  | 'defined'    // Defined with success criteria, ready to plan
   | 'planned'    // Plan created, ready to execute
   | 'executing'  // Actively being worked on
-  | 'verifying'  // For review - awaiting human approval
+  | 'review'     // For review - awaiting human approval
   | 'done'       // Approved, shipped, cleaned up
   | 'blocked';   // Stuck, needs intervention
+
+// Normalize old status values to new ones
+function normalizeStatus(status: string): WorkItemStatus {
+  const mapping: Record<string, WorkItemStatus> = {
+    'created': 'new',
+    'goals-set': 'defined',
+    'verifying': 'review',
+  };
+  return mapping[status] || (status as WorkItemStatus) || 'new';
+}
 
 export interface WorkItemMetadata {
   id: string;
@@ -145,7 +155,7 @@ function parseMetadata(content: string): WorkItemMetadata | null {
     id: getValue('id') || 'unknown',
     project: getValue('project') || 'unknown',
     created: getValue('created') || new Date().toISOString().split('T')[0],
-    status: (getValue('status') as WorkItemStatus) || 'created',
+    status: normalizeStatus(getValue('status')),
     dueDate: getValue('due') || getValue('due-date') || undefined,
     important: importantValue === 'true' || importantValue === 'yes',
     assignedSession: getValue('assigned-session') || undefined,
@@ -258,7 +268,7 @@ export async function createWorkItem(
 - id: ${id}
 - project: ${data.project}
 - created: ${date}
-- status: goals-set${data.dueDate ? `\n- due: ${data.dueDate}` : ''}${data.important ? `\n- important: true` : ''}
+- status: new${data.dueDate ? `\n- due: ${data.dueDate}` : ''}${data.important ? `\n- important: true` : ''}
 - assigned-session:
 
 ## Description
@@ -286,11 +296,11 @@ ${planSection}${verificationSection}${contextSection}${filesSection}${notesSecti
 
 export function getStatusColor(status: WorkItemStatus): string {
   switch (status) {
-    case 'created': return 'bg-zinc-500';
-    case 'goals-set': return 'bg-blue-500';
+    case 'new': return 'bg-zinc-500';
+    case 'defined': return 'bg-blue-500';
     case 'planned': return 'bg-indigo-500';
     case 'executing': return 'bg-purple-500';
-    case 'verifying': return 'bg-yellow-500';
+    case 'review': return 'bg-yellow-500';
     case 'done': return 'bg-green-500';
     case 'blocked': return 'bg-red-500';
     default: return 'bg-gray-500';

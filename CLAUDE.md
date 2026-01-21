@@ -36,7 +36,7 @@ Files in `/work/` follow this naming convention:
 - project: [workspace/project-path]
 - priority: low | medium | high | critical
 - created: YYYY-MM-DD
-- status: created | goals-set | planned | executing | verifying | done | blocked
+- status: new | defined | planned | executing | review | done | blocked
 - assigned-session: [optional - session identifier when picked up]
 
 ## Description
@@ -61,11 +61,11 @@ Files in `/work/` follow this naming convention:
 
 Work items progress through these stages:
 
-1. **Created** - Initial capture, needs goals defined
-2. **Goals Set** - Success criteria defined, ready to plan
+1. **New** - Initial capture, needs goals defined
+2. **Defined** - Success criteria defined, ready to plan
 3. **Planned** - Plan created (PLAN.md generated), ready to execute
 4. **Executing** - Actively being worked on
-5. **Verifying** - Execution complete, verifying success criteria
+5. **Review** - Execution complete, verifying success criteria
 6. **Done** - Verified, shipped, cleaned up
 
 Items can also be **Blocked** at any stage if stuck.
