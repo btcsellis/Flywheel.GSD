@@ -436,11 +436,11 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                           <button
                             onClick={() => setLaunchMenuOpen(!launchMenuOpen)}
                             disabled={launching}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D97757] text-white rounded text-xs font-medium hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
+                            className="flex items-center justify-center w-8 h-8 bg-[#D97757] text-white rounded-full hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
+                            title={getNextStatusLabel(formData.status)}
                           >
-                            <span>{getNextStatusLabel(formData.status)}</span>
-                            <svg className={`w-3 h-3 transition-transform ${launchMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                             </svg>
                           </button>
 
