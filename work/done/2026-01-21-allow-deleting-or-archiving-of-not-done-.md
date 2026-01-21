@@ -4,7 +4,7 @@
 - id: allow-deleting-or-archiving-of-not-done--270
 - project: personal/flywheel-gsd
 - created: 2026-01-21
-- status: review
+- status: done
 - assigned-session:
 
 ## Description
@@ -67,3 +67,5 @@ Add the ability to permanently delete work items that are no longer needed. When
 - 2026-01-21T23:50:00.000Z Added delete button with confirmation dialog to work-item-detail.tsx
 - 2026-01-21T23:52:00.000Z Build passed successfully
 - 2026-01-21T23:53:00.000Z All success criteria verified - ready for /flywheel-ship
+- 2026-01-22T00:05:00.000Z PR created: https://github.com/btcsellis/Flywheel.GSD/pull/2
+- 2026-01-22T00:05:00.000Z Work item completed
