@@ -4,7 +4,7 @@
 - id: make-the-board-easier-to-see-632
 - project: personal/flywheel-gsd
 - created: 2026-01-21
-- status: verifying
+- status: done
 - assigned-session: 
 
 ## Description
@@ -97,3 +97,6 @@ Let's work a little on contrast and sizing. My eyes are not what they used to be
   - Updated status types in page.tsx and work-item-detail.tsx
 - 2026-01-21T22:25:00.000Z User verified changes in browser - approved
 - 2026-01-21T22:25:00.000Z Ready for /flywheel-ship
+- 2026-01-21T22:30:00.000Z Committed: fea55a6
+- 2026-01-21T22:30:00.000Z PR: https://github.com/btcsellis/Flywheel.GSD/pull/1
+- 2026-01-21T22:30:00.000Z Work item completed
