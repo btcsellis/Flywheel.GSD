@@ -111,7 +111,7 @@ Work items are Markdown files with this structure:
 - project: [workspace/project-path]
 - priority: low | medium | high | critical
 - created: YYYY-MM-DD
-- status: ready | in-progress | blocked | done
+- status: new | defined | planned | executing | review | done | blocked
 - assigned-session: [session-id when picked up]
 
 ## Description

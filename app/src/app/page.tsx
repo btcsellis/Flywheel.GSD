@@ -12,11 +12,11 @@ const AREAS: { key: Area; label: string; accent: string; bg: string }[] = [
 ];
 
 const WORKFLOW_STEPS: { status: WorkItemStatus; label: string; num: string }[] = [
-  { status: 'created', label: 'New', num: '01' },
-  { status: 'goals-set', label: 'Defined', num: '02' },
+  { status: 'new', label: 'New', num: '01' },
+  { status: 'defined', label: 'Defined', num: '02' },
   { status: 'planned', label: 'Planned', num: '03' },
   { status: 'executing', label: 'Executing', num: '04' },
-  { status: 'verifying', label: 'Review', num: '05' },
+  { status: 'review', label: 'Review', num: '05' },
 ];
 
 function getArea(project: string): Area {
@@ -31,9 +31,9 @@ export default async function Dashboard() {
 
   // Build a matrix: area -> status -> items[]
   const matrix: Record<Area, Record<WorkItemStatus, WorkItem[]>> = {
-    bellwether: { created: [], 'goals-set': [], planned: [], executing: [], verifying: [], done: [], blocked: [] },
-    sophia: { created: [], 'goals-set': [], planned: [], executing: [], verifying: [], done: [], blocked: [] },
-    personal: { created: [], 'goals-set': [], planned: [], executing: [], verifying: [], done: [], blocked: [] },
+    bellwether: { new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: [] },
+    sophia: { new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: [] },
+    personal: { new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: [] },
   };
 
   for (const item of allItems) {
@@ -58,17 +58,17 @@ export default async function Dashboard() {
 
       <div className="relative">
         {/* Stats */}
-        <div className="mb-6 flex items-center gap-4 text-xs text-zinc-500">
+        <div className="mb-6 flex items-center gap-4 text-sm text-zinc-400">
           <span>{allItems.length} items</span>
-          <span className="text-zinc-700">|</span>
-          <span className="text-emerald-500">{allItems.filter(i => i.metadata.status === 'executing').length} executing</span>
+          <span className="text-zinc-600">|</span>
+          <span className="text-emerald-400">{allItems.filter(i => i.metadata.status === 'executing').length} executing</span>
         </div>
 
         {/* Kanban Board */}
         <div className="overflow-x-auto">
-          <div className="min-w-[900px]">
+          <div className="min-w-[1200px] w-full">
             {/* Column Headers */}
-            <div className="grid grid-cols-[140px_repeat(5,1fr)] gap-px mb-px">
+            <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-1 mb-1">
               <div className="p-3" /> {/* Empty corner */}
               {WORKFLOW_STEPS.map(({ label, num }) => (
                 <div
@@ -76,10 +76,10 @@ export default async function Dashboard() {
                   className="p-3 bg-zinc-900/50 border-b border-zinc-800"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-zinc-600 tabular-nums">
+                    <span className="text-[14px] text-zinc-500 tabular-nums">
                       {num}
                     </span>
-                    <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                    <span className="text-sm font-medium text-zinc-300 uppercase tracking-wider">
                       {label}
                     </span>
                   </div>
@@ -98,11 +98,11 @@ export default async function Dashboard() {
               return (
                 <div
                   key={key}
-                  className={`grid grid-cols-[140px_repeat(5,1fr)] gap-px ${areaIndex > 0 ? 'mt-4' : ''}`}
+                  className={`grid grid-cols-[160px_repeat(5,1fr)] gap-1 ${areaIndex > 0 ? 'mt-4' : ''}`}
                 >
                   {/* Swimlane Label */}
                   <div
-                    className="relative p-3 flex flex-col justify-center rounded-l"
+                    className="relative p-4 flex flex-col justify-center rounded-l"
                     style={{ backgroundColor: bg }}
                   >
                     <div
@@ -110,12 +110,12 @@ export default async function Dashboard() {
                       style={{ backgroundColor: accent }}
                     />
                     <span
-                      className="text-sm font-semibold tracking-wide"
+                      className="text-lg font-semibold tracking-wide"
                       style={{ color: accent }}
                     >
                       {label}
                     </span>
-                    <span className="text-[10px] text-zinc-500 mt-0.5">
+                    <span className="text-[14px] text-zinc-400 mt-0.5">
                       {totalInArea} items
                     </span>
                   </div>
@@ -127,10 +127,10 @@ export default async function Dashboard() {
                     return (
                       <div
                         key={status}
-                        className={`min-h-[100px] p-2 bg-zinc-900/20 border-l border-zinc-800/30 ${isLast ? 'rounded-r' : ''}`}
+                        className={`min-h-[120px] min-w-0 p-3 bg-zinc-900/20 border-l border-zinc-800/30 ${isLast ? 'rounded-r' : ''}`}
                         style={{ backgroundColor: items.length > 0 ? bg : undefined }}
                       >
-                        <div className="space-y-2">
+                        <div className="space-y-3 min-w-0">
                           {items.map(item => (
                             <KanbanCard key={item.filename} item={item} accent={accent} />
                           ))}
@@ -152,8 +152,8 @@ export default async function Dashboard() {
           return (
             <div className="mt-8">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs font-medium text-red-400 uppercase tracking-wider">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-sm font-medium text-red-400 uppercase tracking-wider">
                   Blocked ({blockedItems.length})
                 </span>
               </div>
@@ -210,11 +210,11 @@ function KanbanCard({
   return (
     <Link
       href={`/item/${item.folder}/${encodeURIComponent(item.filename)}`}
-      className="group block"
+      className="group block min-w-0"
     >
       <div
         className={`
-          relative p-2.5 rounded bg-zinc-900 border transition-all duration-150
+          relative p-4 rounded bg-zinc-900 border transition-all duration-150
           ${blocked || isImportant
             ? 'border-red-500/30 hover:border-red-500/50'
             : 'border-zinc-800 hover:border-zinc-700'
@@ -228,23 +228,23 @@ function KanbanCard({
         )}
 
         {/* Content */}
-        <div className="space-y-1.5">
+        <div className="space-y-2.5">
           {/* Title */}
-          <p className={`text-[13px] font-medium leading-tight line-clamp-2 transition-colors ${isImportant ? 'text-red-300 group-hover:text-red-200' : 'text-zinc-200 group-hover:text-white'}`}>
+          <p className={`text-[17px] font-medium leading-tight line-clamp-2 transition-colors ${isImportant ? 'text-red-300 group-hover:text-red-200' : 'text-zinc-200 group-hover:text-white'}`}>
             {item.title}
           </p>
 
           {/* Meta row */}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 min-w-0">
             <span
-              className="text-[10px] uppercase tracking-wide"
+              className="text-[14px] uppercase tracking-wide truncate min-w-0"
               style={{ color: accent }}
             >
               {item.metadata.project.split('/')[1]}
             </span>
             {dueStatus && (
               <span
-                className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+                className="text-[13px] font-medium px-2 py-1 rounded flex-shrink-0"
                 style={{
                   color: dueStatus.color,
                   backgroundColor: `${dueStatus.color}15`,
@@ -257,8 +257,8 @@ function KanbanCard({
 
           {/* Progress bar for executing items */}
           {isExecuting && totalCriteria > 0 && (
-            <div className="flex items-center gap-2 pt-1">
-              <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="flex items-center gap-3 pt-1">
+              <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-300"
                   style={{
@@ -267,7 +267,7 @@ function KanbanCard({
                   }}
                 />
               </div>
-              <span className="text-[10px] text-zinc-500 tabular-nums">
+              <span className="text-[14px] text-zinc-400 tabular-nums">
                 {completedCriteria}/{totalCriteria}
               </span>
             </div>

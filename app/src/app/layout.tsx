@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 function Nav() {
   return (
     <nav className="border-b border-zinc-800 bg-[#0a0a0b]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14">
           <div className="flex items-center gap-8">
             <Link
@@ -60,7 +60,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${jetbrainsMono.variable} font-mono antialiased bg-[#0a0a0b] text-zinc-100 min-h-screen`}>
         <Nav />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children}
         </main>
       </body>
