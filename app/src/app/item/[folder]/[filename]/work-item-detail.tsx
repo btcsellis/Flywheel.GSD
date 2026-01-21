@@ -23,14 +23,11 @@ const WORKFLOW_STEPS: { status: WorkItemStatus; label: string; num: string }[] =
   { status: 'done', label: 'Done', num: '✓' },
 ];
 
-// Claude logo icon
-function ClaudeIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.08-.079-2.878-1.166-1.005-.46-.772-.307-.157-.205.079-.153.386-.282.85-.383 1.056-.383 3.164-1.14.464-.307.158-.307-.158-.384-.31-.384-.464-.384-.773-.307-1.673-.69-1.21-.536-.927-.384-.31-.307.08-.384.31-.307.541-.154.772.077 1.622.537 2.394.92 2.007.844.85.384.387.077.31-.077.387-.384.31-.537.232-.614.08-.614-.08-.844-.155-.695-.31-.46-.155-.694-.23-.54-.155-.387-.077h-.464l-.232.23-.077.308.077.384.232.384.387.307 1.984.997 2.316 1.074 1.623.69.618.384.31.384v.384l-.155.307-.464.384-.695.384-1.39.614-2.007.767-2.548 1.073-.696.384-.31.307v.384l.155.307.464.307.772.154h.927l1.39-.384 2.007-.767 2.316-1.074 1.39-.614.464-.23.232-.077h.232l.155.153.077.23-.077.308-.232.307-.464.307-1.39.614-2.548 1.073-2.007.767-1.39.46-.927.23h-.772l-.695-.076-.464-.23-.31-.308-.155-.384v-.46l.155-.384.387-.384.695-.384 2.007-.844zm9.256-6.14l.077.307.31.384.618.307 1.39.384 2.007.537 2.316.69 1.313.46.541.307.155.307v.384l-.232.384-.464.307-.927.307-2.007.537-2.548.767-1.932.614-.695.307-.31.384v.384l.155.307.387.307.772.23h1.004l1.39-.307 2.316-.69 2.007-.614 1.39-.46.695-.23.387-.077h.31l.155.153v.307l-.155.307-.387.307-.695.307-1.39.46-2.007.614-2.316.69-1.39.384-.927.154h-.849l-.695-.077-.464-.23-.31-.307-.155-.384v-.46l.232-.384.464-.384.927-.384 2.007-.614 2.548-.767 2.007-.614 1.39-.46.541-.307.232-.307.077-.384-.077-.307-.232-.307-.464-.307-1.39-.46-2.007-.614-2.548-.767-2.007-.614-1.313-.46-.541-.307-.232-.384v-.384l.155-.307.387-.307.772-.23 1.004-.077 1.39.23 2.007.537 2.316.69 1.39.46.618.23.31.154.155.077h.31l.155-.154.077-.23-.077-.307-.232-.307-.464-.307-1.39-.46-2.316-.69-2.007-.614-1.39-.384-.927-.154h-.772l-.695.077-.464.23-.31.307z" />
-    </svg>
-  );
-}
+// Launch options for the dropdown
+const LAUNCH_OPTIONS = [
+  { id: 'cc-new', label: 'Claude Code (new session)', reuseSession: false },
+  { id: 'cc-existing', label: 'Claude Code (existing session)', reuseSession: true },
+] as const;
 
 interface FormData {
   title: string;
@@ -191,6 +188,19 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState(false);
+  const [launchMenuOpen, setLaunchMenuOpen] = useState(false);
+  const launchMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (launchMenuRef.current && !launchMenuRef.current.contains(event.target as Node)) {
+        setLaunchMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const { area: initialArea, project: initialProject } = parseAreaAndProject(item.metadata.project);
 
@@ -440,26 +450,35 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             </button>
 
             {formData.status !== 'done' && (
-              <div className="flex items-center gap-2">
+              <div className="relative" ref={launchMenuRef}>
                 <button
-                  onClick={() => handleLaunchClaude(false)}
+                  onClick={() => setLaunchMenuOpen(!launchMenuOpen)}
                   disabled={launching}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D97757] text-white rounded text-xs font-medium hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
-                  title="Start fresh Claude session"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#D97757] text-white rounded text-xs font-medium hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
                 >
-                  <ClaudeIcon className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">→</span>
-                  <span>{getNextStatusLabel(formData.status)}</span>
+                  <span>→ {getNextStatusLabel(formData.status)}</span>
+                  <svg className={`w-3 h-3 transition-transform ${launchMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
-                <button
-                  onClick={() => handleLaunchClaude(true)}
-                  disabled={launching}
-                  className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800 text-zinc-400 rounded text-xs font-medium hover:bg-zinc-700 hover:text-zinc-300 transition-colors disabled:opacity-50 border border-zinc-700"
-                  title="Reuse existing Claude session"
-                >
-                  <ClaudeIcon className="w-3.5 h-3.5" />
-                  <span>↺</span>
-                </button>
+
+                {launchMenuOpen && (
+                  <div className="absolute right-0 mt-1 w-56 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                    {LAUNCH_OPTIONS.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => {
+                          setLaunchMenuOpen(false);
+                          handleLaunchClaude(option.reuseSession);
+                        }}
+                        disabled={launching}
+                        className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
