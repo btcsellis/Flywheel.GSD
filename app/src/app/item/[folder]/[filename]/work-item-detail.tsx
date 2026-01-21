@@ -189,6 +189,8 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchMenuOpen, setLaunchMenuOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const launchMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -297,6 +299,27 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
       alert('Failed to launch Claude');
     } finally {
       setLaunching(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/work-items/${item.folder}/${encodeURIComponent(item.filename)}`,
+        { method: 'DELETE' }
+      );
+      const data = await res.json();
+      if (data.success) {
+        router.push('/');
+      } else {
+        alert(data.error || 'Failed to delete work item');
+      }
+    } catch {
+      alert('Failed to delete work item');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -774,8 +797,45 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           >
             Cancel
           </Link>
+          {formData.status !== 'done' && (
+            <button
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={deleting}
+              className="ml-auto px-4 py-2 bg-red-900/30 border border-red-800/50 text-red-400 rounded font-medium text-sm hover:bg-red-900/50 hover:border-red-700 transition-colors disabled:opacity-50"
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-zinc-100 mb-2">Delete Work Item</h3>
+            <p className="text-zinc-400 mb-4">
+              Are you sure you want to delete &quot;{formData.title}&quot;? This will also remove any associated prompt files and kill any running tmux sessions.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={deleting}
+                className="px-4 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 rounded font-medium text-sm hover:bg-zinc-700 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded font-medium text-sm hover:bg-red-500 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

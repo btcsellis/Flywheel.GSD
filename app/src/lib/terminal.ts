@@ -28,6 +28,16 @@ async function tmuxSessionExists(sessionName: string): Promise<boolean> {
   }
 }
 
+export async function killTmuxSession(sessionName: string): Promise<boolean> {
+  try {
+    await execAsync(`tmux kill-session -t "${sessionName}" 2>/dev/null`);
+    return true;
+  } catch {
+    // Session doesn't exist or already killed - that's fine
+    return false;
+  }
+}
+
 async function isClaudeRunningInSession(sessionName: string): Promise<boolean> {
   try {
     const { stdout } = await execAsync(
@@ -42,9 +52,9 @@ async function isClaudeRunningInSession(sessionName: string): Promise<boolean> {
 export async function launchClaudeInITerm(config: LaunchConfig): Promise<LaunchResult> {
   const { projectPath, tmuxSessionName, initialPrompt, reuseSession = false } = config;
 
-  // Write prompt to a temp file
+  // Write prompt to project directory with task-specific name (so Claude Code has read access)
+  const promptFile = path.join(projectPath, `.flywheel-prompt-${tmuxSessionName}.txt`);
   const tempDir = os.tmpdir();
-  const promptFile = path.join(tempDir, `flywheel-prompt-${tmuxSessionName}.txt`);
   await fs.writeFile(promptFile, initialPrompt, 'utf-8');
 
   const sessionExists = await tmuxSessionExists(tmuxSessionName);
@@ -84,23 +94,16 @@ tmux send-keys -t "${tmuxSessionName}" "claude '${claudePrompt}'" Enter
   const scriptFile = path.join(tempDir, `flywheel-launch-${tmuxSessionName}.sh`);
   await fs.writeFile(scriptFile, shellScript, { mode: 0o755 });
 
-  // AppleScript: reuse frontmost iTerm window if available, otherwise create new
+  // AppleScript: create a new pane (horizontal split) in current window
   const appleScript = `
 tell application "iTerm"
   activate
-  if (count of windows) > 0 then
-    tell current session of current window
-      write text "${scriptFile}"
-    end tell
-  else
-    create window with default profile
-    tell current session of current window
-      write text "${scriptFile}"
-    end tell
-  end if
-  -- Attach to tmux session
-  delay 0.5
   tell current session of current window
+    set newSession to (split horizontally with default profile)
+  end tell
+  tell newSession
+    write text "bash ${scriptFile}"
+    delay 0.5
     write text "tmux attach -t ${tmuxSessionName}"
   end tell
 end tell

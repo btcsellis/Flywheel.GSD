@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { killTmuxSession } from './terminal';
 
 export type WorkItemStatus =
   | 'new'        // New, needs definition
@@ -316,5 +317,59 @@ export async function getProjectPath(projectIdentifier: string): Promise<string 
     return paths[projectIdentifier] ?? null;
   } catch {
     return null;
+  }
+}
+
+export async function deleteWorkItem(
+  folder: 'backlog' | 'active' | 'done',
+  filename: string
+): Promise<boolean> {
+  const filepath = path.join(WORK_DIR, folder, filename);
+
+  try {
+    await fs.unlink(filepath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function cleanupWorkItemResources(workItem: WorkItem): Promise<void> {
+  const projectPath = await getProjectPath(workItem.metadata.project);
+  if (!projectPath) {
+    return;
+  }
+
+  const workItemId = workItem.metadata.id;
+
+  // Delete .flywheel-prompt-* files matching the work item id
+  try {
+    const files = await fs.readdir(projectPath);
+    const promptFiles = files.filter(f =>
+      f.startsWith('.flywheel-prompt-') &&
+      f.includes(workItemId) &&
+      f.endsWith('.txt')
+    );
+    for (const file of promptFiles) {
+      try {
+        await fs.unlink(path.join(projectPath, file));
+      } catch {
+        // Ignore errors for individual files
+      }
+    }
+  } catch {
+    // Ignore directory read errors
+  }
+
+  // Kill tmux session if running
+  const sessionName = `flywheel-${workItemId}`;
+  await killTmuxSession(sessionName);
+
+  // Delete PLAN.md from project directory if it exists
+  const planPath = path.join(projectPath, 'PLAN.md');
+  try {
+    await fs.unlink(planPath);
+  } catch {
+    // PLAN.md doesn't exist - that's fine
   }
 }
