@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { WorkItem, WorkItemStatus } from '@/lib/work-items';
+import { getNextStatusLabel } from '@/lib/prompts';
 
 const AREAS = [
   { value: 'bellwether', label: 'Bellwether', color: '#3b82f6' },
@@ -180,6 +181,7 @@ function AutoResizeTextarea({
 export function WorkItemDetail({ item }: { item: WorkItem }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [launching, setLaunching] = useState(false);
 
   const { area: initialArea, project: initialProject } = parseAreaAndProject(item.metadata.project);
 
@@ -258,6 +260,25 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
 
   const setStatus = (status: WorkItemStatus) => {
     setFormData({ ...formData, status });
+  };
+
+  const handleLaunchClaude = async () => {
+    setLaunching(true);
+    try {
+      const res = await fetch('/api/launch-claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder: item.folder, filename: item.filename }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.error || 'Failed to launch Claude');
+      }
+    } catch {
+      alert('Failed to launch Claude');
+    } finally {
+      setLaunching(false);
+    }
   };
 
   const updateCriterion = (index: number, field: 'text' | 'completed', value: string | boolean) => {
@@ -684,6 +705,15 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
+          {formData.status !== 'done' && (
+            <button
+              onClick={handleLaunchClaude}
+              disabled={launching}
+              className="px-4 py-2 bg-purple-600 text-white rounded font-medium text-sm hover:bg-purple-500 transition-colors disabled:opacity-50"
+            >
+              {launching ? 'Launching...' : `Launch Claude → ${getNextStatusLabel(formData.status)}`}
+            </button>
+          )}
           <Link
             href="/"
             className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded font-medium text-sm hover:border-zinc-700 hover:text-zinc-300 transition-colors"

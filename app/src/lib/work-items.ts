@@ -296,3 +296,15 @@ export function getStatusColor(status: WorkItemStatus): string {
     default: return 'bg-gray-500';
   }
 }
+
+const PROJECT_PATHS_FILE = path.join(process.cwd(), '..', 'project-paths.json');
+
+export async function getProjectPath(projectIdentifier: string): Promise<string | null> {
+  try {
+    const content = await fs.readFile(PROJECT_PATHS_FILE, 'utf-8');
+    const paths: Record<string, string> = JSON.parse(content);
+    return paths[projectIdentifier] ?? null;
+  } catch {
+    return null;
+  }
+}
