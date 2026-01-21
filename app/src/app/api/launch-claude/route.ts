@@ -7,7 +7,7 @@ import path from 'path';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { folder, filename } = body;
+    const { folder, filename, reuseSession = false } = body;
 
     if (!folder || !filename) {
       return NextResponse.json(
@@ -48,12 +48,14 @@ export async function POST(request: Request) {
       projectPath,
       tmuxSessionName,
       initialPrompt,
+      reuseSession,
     });
 
     if (result.success) {
       return NextResponse.json({
         success: true,
         tmuxSession: tmuxSessionName,
+        reusedSession: result.reusedSession,
       });
     } else {
       return NextResponse.json(

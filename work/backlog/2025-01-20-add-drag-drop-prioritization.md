@@ -4,8 +4,8 @@
 - id: flywheel-drag-042
 - project: personal/flywheel-gsd
 - created: 2025-01-20
-- status: goals-set
-- assigned-session:
+- status: created
+- assigned-session: 
 
 ## Description
 
