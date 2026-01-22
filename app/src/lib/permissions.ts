@@ -183,6 +183,10 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Skill(flywheel-execute)',
       'Skill(flywheel-done)',
       'Skill(flywheel-new)',
+      'Read(~/personal/flywheel-gsd/**)',
+      'Edit(~/personal/flywheel-gsd/work/**)',
+      'Read(~/.claude/**)',
+      'Bash(ls:~/.claude/*)',
     ],
   },
 ];
