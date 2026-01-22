@@ -144,14 +144,28 @@
 
 /* Transitioning card styles - using CSS custom property for accent color */
 .transitioning-card {
-  --tw-gradient-from: var(--transitioning-accent, #3b82f6);
-  --tw-gradient-to: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.transitioning-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--transitioning-accent, #3b82f6) 15%, transparent) 0%,
-    transparent 50%,
-    color-mix(in srgb, var(--transitioning-accent, #3b82f6) 10%, transparent) 100%
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--transitioning-accent, #3b82f6) 30%, transparent) 50%,
+    transparent 100%
   );
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
+  background-size: 200% 100%;
+  animation: gradient-shift 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.transitioning-card > * {
+  position: relative;
+  z-index: 1;
 }
