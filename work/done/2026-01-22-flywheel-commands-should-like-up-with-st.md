@@ -4,7 +4,7 @@
 - id: flywheel-commands-should-like-up-with-st-717
 - project: personal/flywheel-gsd
 - created: 2026-01-22
-- status: review
+- status: done
 - workflow: main
 - tmux-session: flywheel-gsd
 - assigned-session:
@@ -116,3 +116,5 @@ Restructure the Flywheel slash commands to align 1:1 with workflow statuses. Com
 - 2026-01-22T15:07:51.000Z Verified: lint passes (warnings only), build succeeds
 - 2026-01-22T15:08:00.000Z All success criteria verified
 - 2026-01-22T15:08:00.000Z Ready for /flywheel-done
+- 2026-01-22T15:10:00.000Z Committed and pushed to main (0bc47d8)
+- 2026-01-22T15:10:00.000Z Work item completed
