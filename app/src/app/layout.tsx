@@ -31,6 +31,7 @@ function Nav() {
             <div className="flex items-center gap-1">
               <NavLink href="/">Board</NavLink>
               <NavLink href="/archive">Archive</NavLink>
+              <NavLink href="/permissions">Permissions</NavLink>
               <NavLink href="/new">+ New</NavLink>
             </div>
           </div>
