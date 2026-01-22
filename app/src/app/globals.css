@@ -127,13 +127,10 @@
 /* Animated gradient for transitioning work items */
 @keyframes gradient-shift {
   0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
+    background-position: 200% 0%;
   }
   100% {
-    background-position: 0% 50%;
+    background-position: -200% 0%;
   }
 }
 
@@ -155,11 +152,13 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
+    transparent 40%,
     color-mix(in srgb, var(--transitioning-accent, #3b82f6) 30%, transparent) 50%,
+    transparent 60%,
     transparent 100%
   );
   background-size: 200% 100%;
-  animation: gradient-shift 2s ease-in-out infinite;
+  animation: gradient-shift 2s linear infinite;
   pointer-events: none;
   z-index: 0;
   border-radius: inherit;
