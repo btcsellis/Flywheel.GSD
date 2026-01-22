@@ -26,10 +26,10 @@ export async function POST(request: Request) {
     }
 
     // Resolve project path
-    const projectPath = await getProjectPath(workItem.metadata.project);
+    const projectPath = getProjectPath(workItem.metadata.project);
     if (!projectPath) {
       return NextResponse.json(
-        { error: `No path configured for project: ${workItem.metadata.project}. Add it to project-paths.json` },
+        { error: `Unknown project: ${workItem.metadata.project}. Project must be under ~/bellwether, ~/sophia, or ~/personal.` },
         { status: 400 }
       );
     }

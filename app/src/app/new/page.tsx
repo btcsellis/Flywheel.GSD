@@ -12,11 +12,12 @@ const AREAS = [
 
 type Area = typeof AREAS[number]['value'];
 
-const PROJECTS: Record<Area, string[]> = {
-  bellwether: ['BellwetherPlatform'],
-  sophia: ['Sophia.Core', 'Sophia.Api'],
-  personal: ['flywheel-gsd'],
-};
+interface Project {
+  name: string;
+  path: string;
+}
+
+type ProjectsByArea = Record<string, Project[]>;
 
 // Auto-resize textarea hook
 function useAutoResize(value: string) {
@@ -64,6 +65,8 @@ function AutoResizeTextarea({
 export default function NewWorkItemPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projects, setProjects] = useState<ProjectsByArea>({});
 
   const [title, setTitle] = useState('');
   const [area, setArea] = useState<Area>('personal');
@@ -79,9 +82,27 @@ export default function NewWorkItemPage() {
   const [files, setFiles] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
 
+  // Fetch projects on mount
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const response = await fetch('/api/projects');
+        if (response.ok) {
+          const data = await response.json();
+          setProjects(data);
+        }
+      } catch {
+        // Failed to fetch projects - continue with empty
+      } finally {
+        setProjectsLoading(false);
+      }
+    }
+    fetchProjects();
+  }, []);
+
   const currentArea = AREAS.find(a => a.value === area);
   const accent = currentArea?.color || '#6b7280';
-  const projectOptions = PROJECTS[area] || [];
+  const projectOptions = (projects[area] || []).map(p => p.name);
 
   // Criterion handlers
   const updateCriterion = (index: number, field: 'text' | 'completed', value: string | boolean) => {
@@ -219,9 +240,10 @@ export default function NewWorkItemPage() {
               value={project}
               onChange={e => setProject(e.target.value)}
               required
-              className="w-full px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded text-sm text-zinc-100 focus:outline-none focus:border-zinc-600"
+              disabled={projectsLoading}
+              className="w-full px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded text-sm text-zinc-100 focus:outline-none focus:border-zinc-600 disabled:opacity-50"
             >
-              <option value="">Select...</option>
+              <option value="">{projectsLoading ? 'Loading...' : 'Select...'}</option>
               {projectOptions.map(p => (
                 <option key={p} value={p}>{p}</option>
               ))}
