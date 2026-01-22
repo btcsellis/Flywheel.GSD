@@ -3,21 +3,31 @@ import type { WorkItem, WorkItemStatus, WorkflowType } from './work-items';
 export interface StatusAction {
   targetStatus: WorkItemStatus;
   label: string;
+  command: string;
   mode: 'interactive' | 'autonomous';
 }
 
+/**
+ * Maps each status to the command that should be run to progress the work item.
+ * Commands are the source of truth for workflow logic.
+ */
 export const STATUS_ACTIONS: Record<WorkItemStatus, StatusAction> = {
-  'new': { targetStatus: 'defined', label: 'Define Goals', mode: 'interactive' },
-  'defined': { targetStatus: 'planned', label: 'Create Plan', mode: 'interactive' },
-  'planned': { targetStatus: 'executing', label: 'Execute', mode: 'autonomous' },
-  'executing': { targetStatus: 'review', label: 'Continue', mode: 'autonomous' },
-  'review': { targetStatus: 'done', label: 'Ship', mode: 'interactive' },
-  'done': { targetStatus: 'done', label: 'Complete', mode: 'interactive' },
-  'blocked': { targetStatus: 'executing', label: 'Unblock', mode: 'interactive' },
+  'new': { targetStatus: 'defined', label: 'Define', command: '/flywheel-define', mode: 'interactive' },
+  'defined': { targetStatus: 'planned', label: 'Plan', command: '/flywheel-plan', mode: 'interactive' },
+  'planned': { targetStatus: 'executing', label: 'Execute', command: '/flywheel-execute', mode: 'autonomous' },
+  'executing': { targetStatus: 'review', label: 'Continue', command: '/flywheel-execute', mode: 'autonomous' },
+  'review': { targetStatus: 'done', label: 'Done', command: '/flywheel-done', mode: 'interactive' },
+  'done': { targetStatus: 'done', label: 'Complete', command: '', mode: 'interactive' },
+  'blocked': { targetStatus: 'executing', label: 'Unblock', command: '/flywheel-execute', mode: 'interactive' },
 };
 
+/**
+ * Generates a minimal prompt that tells Claude which command to run.
+ * The actual workflow logic lives in the command files, not here.
+ */
 export function generatePromptForStatus(workItem: WorkItem, workItemPath: string, workflow?: WorkflowType): string {
   const status = workItem.metadata.status;
+  const action = STATUS_ACTIONS[status];
   const workflowInfo = workflow ? `\nWorkflow: ${workflow}` : '';
   const tmuxInfo = workItem.metadata.tmuxSession ? `\nTmux Session: ${workItem.metadata.tmuxSession}` : '';
 
@@ -30,74 +40,44 @@ Current Status: ${status}${workflowInfo}${tmuxInfo}
 
 `;
 
+  // For new items, include workflow selection instruction if provided
+  const workflowInstruction = status === 'new' && workflow
+    ? `\n\nIMPORTANT: The user has selected "${workflow}" workflow. Update the work item metadata to add:\n- workflow: ${workflow}`
+    : '';
+
   switch (status) {
     case 'new':
-      // For new items, the workflow choice should be passed from the UI
-      const workflowInstruction = workflow
-        ? `\n\nIMPORTANT: The user has selected "${workflow}" workflow. Update the work item metadata to add:\n- workflow: ${workflow}`
-        : '';
-      return baseContext + `This work item needs definition. Your task:
-1. Read the work item file to understand the request
-2. Ask clarifying questions to understand scope, constraints, and requirements
-3. Define clear, specific success criteria
-4. Update the work item file with the success criteria
-5. Change status from 'new' to 'defined'${workflowInstruction}
+      return baseContext + `This work item needs its goals and success criteria defined.${workflowInstruction}
 
-Start by reading the work item and asking questions.`;
+Run ${action.command} to define the work item.`;
 
     case 'defined':
-      return baseContext + `This work item has defined goals and needs a plan. Your task:
-1. Read the work item file to understand the success criteria
-2. Explore the codebase to understand the current architecture
-3. Design an implementation approach
-4. Create a numbered plan with specific steps
-5. Update the work item file with the plan
-6. Change status from 'defined' to 'planned'
+      return baseContext + `This work item has defined goals and needs an implementation plan.
 
-Start by reading the work item and exploring the relevant code.`;
+Run ${action.command} to create the plan.`;
 
     case 'planned':
-      return baseContext + `This work item has a plan ready for execution. Your task:
-1. Read the work item file to understand the plan
-2. Execute each step in the plan
-3. Check off success criteria as you complete them
-4. Add entries to the execution log as you make progress
-5. When all steps are done, change status from 'planned' to 'review'
+      return baseContext + `This work item has a plan ready for execution.
 
-Run /flywheel-execute to begin autonomous execution.`;
+Run ${action.command} to begin autonomous execution.`;
 
     case 'executing':
-      return baseContext + `This work item is in progress. Your task:
-1. Read the work item file to see what has been done
-2. Check the execution log for the last completed step
-3. Continue executing from where you left off
-4. Check off success criteria as you complete them
-5. When all steps are done, change status from 'executing' to 'review'
+      return baseContext + `This work item is in progress.
 
-Run /flywheel-execute to continue autonomous execution.`;
+Run ${action.command} to continue autonomous execution.`;
 
     case 'review':
-      return baseContext + `This work item is ready for review and shipping. Your task:
-1. Read the work item file
-2. Verify all success criteria are met
-3. Run any verification commands specified
-4. Summarize what was implemented
-5. Run /flywheel-ship to commit, push, and create a PR
-6. Change status from 'review' to 'done'
+      return baseContext + `This work item is ready for review and shipping.
 
-Start by reading the work item and verifying the implementation.`;
+Run ${action.command} to commit, push, create PR, and archive.`;
 
     case 'done':
       return baseContext + `This work item is complete. No action needed.`;
 
     case 'blocked':
-      return baseContext + `This work item is blocked. Your task:
-1. Read the work item file to understand what's blocking progress
-2. Investigate the blocker
-3. Ask questions if needed to understand how to proceed
-4. Once unblocked, change status back to the appropriate workflow step
+      return baseContext + `This work item is blocked.
 
-Start by reading the work item to understand the blocker.`;
+Run ${action.command} to investigate and unblock.`;
 
     default:
       return baseContext + `Read the work item file and determine the appropriate next action.`;
