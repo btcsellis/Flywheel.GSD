@@ -40,14 +40,14 @@ export async function discoverProjects(): Promise<ProjectsByArea> {
 
 /**
  * Discovers projects in a specific area directory.
- * Returns only visible directories (excludes hidden folders starting with '.' and worktree folders ending with '-worktree').
+ * Returns only visible directories (excludes hidden folders starting with '.' and worktree folders containing '-worktree').
  */
 async function discoverProjectsInArea(basePath: string): Promise<Project[]> {
   try {
     const entries = await fs.readdir(basePath, { withFileTypes: true });
 
     const projects: Project[] = entries
-      .filter(entry => entry.isDirectory() && !entry.name.startsWith('.') && !entry.name.endsWith('-worktree'))
+      .filter(entry => entry.isDirectory() && !entry.name.startsWith('.') && !entry.name.includes('-worktree'))
       .map(entry => ({
         name: entry.name,
         path: path.join(basePath, entry.name),
