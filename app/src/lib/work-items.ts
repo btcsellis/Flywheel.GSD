@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { killTmuxSession } from './terminal';
+import { getProjectPathFromIdentifier } from './projects';
 
 export type WorkItemStatus =
   | 'new'        // New, needs definition
@@ -353,16 +354,8 @@ export function getStatusColor(status: WorkItemStatus): string {
   }
 }
 
-const PROJECT_PATHS_FILE = path.join(process.cwd(), '..', 'project-paths.json');
-
-export async function getProjectPath(projectIdentifier: string): Promise<string | null> {
-  try {
-    const content = await fs.readFile(PROJECT_PATHS_FILE, 'utf-8');
-    const paths: Record<string, string> = JSON.parse(content);
-    return paths[projectIdentifier] ?? null;
-  } catch {
-    return null;
-  }
+export function getProjectPath(projectIdentifier: string): string | null {
+  return getProjectPathFromIdentifier(projectIdentifier);
 }
 
 export async function deleteWorkItem(
@@ -380,7 +373,7 @@ export async function deleteWorkItem(
 }
 
 export async function cleanupWorkItemResources(workItem: WorkItem): Promise<void> {
-  const projectPath = await getProjectPath(workItem.metadata.project);
+  const projectPath = getProjectPath(workItem.metadata.project);
   if (!projectPath) {
     return;
   }
