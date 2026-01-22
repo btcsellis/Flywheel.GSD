@@ -1,4 +1,4 @@
-import type { WorkItem, WorkItemStatus } from './work-items';
+import type { WorkItem, WorkItemStatus, WorkflowType } from './work-items';
 
 export interface StatusAction {
   targetStatus: WorkItemStatus;
@@ -16,26 +16,32 @@ export const STATUS_ACTIONS: Record<WorkItemStatus, StatusAction> = {
   'blocked': { targetStatus: 'executing', label: 'Unblock', mode: 'interactive' },
 };
 
-export function generatePromptForStatus(workItem: WorkItem, workItemPath: string): string {
+export function generatePromptForStatus(workItem: WorkItem, workItemPath: string, workflow?: WorkflowType): string {
   const status = workItem.metadata.status;
+  const workflowInfo = workflow ? `\nWorkflow: ${workflow}` : '';
+  const tmuxInfo = workItem.metadata.tmuxSession ? `\nTmux Session: ${workItem.metadata.tmuxSession}` : '';
 
   const baseContext = `You are working on a Flywheel.GSD work item.
 
 Work item file: ${workItemPath}
 Title: ${workItem.title}
 Project: ${workItem.metadata.project}
-Current Status: ${status}
+Current Status: ${status}${workflowInfo}${tmuxInfo}
 
 `;
 
   switch (status) {
     case 'new':
+      // For new items, the workflow choice should be passed from the UI
+      const workflowInstruction = workflow
+        ? `\n\nIMPORTANT: The user has selected "${workflow}" workflow. Update the work item metadata to add:\n- workflow: ${workflow}`
+        : '';
       return baseContext + `This work item needs definition. Your task:
 1. Read the work item file to understand the request
 2. Ask clarifying questions to understand scope, constraints, and requirements
 3. Define clear, specific success criteria
 4. Update the work item file with the success criteria
-5. Change status from 'new' to 'defined'
+5. Change status from 'new' to 'defined'${workflowInstruction}
 
 Start by reading the work item and asking questions.`;
 

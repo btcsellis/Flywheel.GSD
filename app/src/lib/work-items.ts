@@ -21,6 +21,8 @@ function normalizeStatus(status: string): WorkItemStatus {
   return mapping[status] || (status as WorkItemStatus) || 'new';
 }
 
+export type WorkflowType = 'main' | 'worktree';
+
 export interface WorkItemMetadata {
   id: string;
   project: string;
@@ -29,6 +31,8 @@ export interface WorkItemMetadata {
   dueDate?: string;
   important?: boolean;
   assignedSession?: string;
+  workflow?: WorkflowType;
+  tmuxSession?: string;
 }
 
 export interface SuccessCriterion {
@@ -151,6 +155,7 @@ function parseMetadata(content: string): WorkItemMetadata | null {
   };
 
   const importantValue = getValue('important');
+  const workflowValue = getValue('workflow');
 
   return {
     id: getValue('id') || 'unknown',
@@ -160,6 +165,8 @@ function parseMetadata(content: string): WorkItemMetadata | null {
     dueDate: getValue('due') || getValue('due-date') || undefined,
     important: importantValue === 'true' || importantValue === 'yes',
     assignedSession: getValue('assigned-session') || undefined,
+    workflow: (workflowValue === 'main' || workflowValue === 'worktree') ? workflowValue : undefined,
+    tmuxSession: getValue('tmux-session') || undefined,
   };
 }
 
@@ -217,6 +224,44 @@ export async function updateWorkItemContent(
   } catch {
     return false;
   }
+}
+
+export async function updateWorkItemMetadata(
+  folder: 'backlog' | 'active' | 'done',
+  filename: string,
+  updates: Partial<Pick<WorkItemMetadata, 'workflow' | 'tmuxSession' | 'assignedSession' | 'status'>>
+): Promise<boolean> {
+  const workItem = await getWorkItem(folder, filename);
+  if (!workItem) return false;
+
+  let content = workItem.rawContent;
+
+  // Update or add each field in the metadata section
+  if (updates.workflow !== undefined) {
+    if (content.includes('- workflow:')) {
+      content = content.replace(/- workflow:.*/, `- workflow: ${updates.workflow}`);
+    } else {
+      content = content.replace(/(## Metadata\n[\s\S]*?)(- assigned-session)/, `$1- workflow: ${updates.workflow}\n$2`);
+    }
+  }
+
+  if (updates.tmuxSession !== undefined) {
+    if (content.includes('- tmux-session:')) {
+      content = content.replace(/- tmux-session:.*/, `- tmux-session: ${updates.tmuxSession}`);
+    } else {
+      content = content.replace(/(## Metadata\n[\s\S]*?)(- assigned-session)/, `$1- tmux-session: ${updates.tmuxSession}\n$2`);
+    }
+  }
+
+  if (updates.assignedSession !== undefined) {
+    content = content.replace(/- assigned-session:.*/, `- assigned-session: ${updates.assignedSession}`);
+  }
+
+  if (updates.status !== undefined) {
+    content = content.replace(/- status:.*/, `- status: ${updates.status}`);
+  }
+
+  return updateWorkItemContent(folder, filename, content);
 }
 
 export async function createWorkItem(

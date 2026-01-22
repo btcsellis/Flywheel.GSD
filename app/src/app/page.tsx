@@ -1,5 +1,6 @@
 import { getAllWorkItems, type WorkItem, type WorkItemStatus } from '@/lib/work-items';
 import Link from 'next/link';
+import { LaunchButton } from '@/components/launch-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -182,10 +183,12 @@ function KanbanCard({
   item,
   accent,
   blocked,
+  showLaunchButton = true,
 }: {
   item: WorkItem;
   accent: string;
   blocked?: boolean;
+  showLaunchButton?: boolean;
 }) {
   const completedCriteria = item.successCriteria.filter(c => c.completed).length;
   const totalCriteria = item.successCriteria.length;
@@ -208,72 +211,99 @@ function KanbanCard({
   const isImportant = item.metadata.important;
 
   return (
-    <Link
-      href={`/item/${item.folder}/${encodeURIComponent(item.filename)}`}
-      className="group block min-w-0"
-    >
-      <div
-        className={`
-          relative p-4 rounded bg-zinc-900 border transition-all duration-150
-          ${blocked || isImportant
-            ? 'border-red-500/30 hover:border-red-500/50'
-            : 'border-zinc-800 hover:border-zinc-700'
-          }
-          hover:translate-y-[-1px] hover:shadow-lg hover:shadow-black/20
-        `}
+    <div className="group flex gap-1 min-w-0">
+      <Link
+        href={`/item/${item.folder}/${encodeURIComponent(item.filename)}`}
+        className="block flex-1 min-w-0"
       >
-        {/* Important indicator */}
-        {isImportant && (
-          <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
-        )}
+        <div
+          className={`
+            relative h-full p-4 rounded bg-zinc-900 border transition-all duration-150
+            ${blocked || isImportant
+              ? 'border-red-500/30 hover:border-red-500/50'
+              : 'border-zinc-800 hover:border-zinc-700'
+            }
+            hover:translate-y-[-1px] hover:shadow-lg hover:shadow-black/20
+          `}
+        >
+          {/* Important indicator */}
+          {isImportant && (
+            <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
+          )}
 
-        {/* Content */}
-        <div className="space-y-2.5">
-          {/* Title */}
-          <p className={`text-[17px] font-medium leading-tight line-clamp-2 transition-colors ${isImportant ? 'text-red-300 group-hover:text-red-200' : 'text-zinc-200 group-hover:text-white'}`}>
-            {item.title}
-          </p>
+          {/* Content */}
+          <div className="space-y-2.5">
+            {/* Title */}
+            <p className={`text-[17px] font-medium leading-tight line-clamp-2 transition-colors ${isImportant ? 'text-red-300 group-hover:text-red-200' : 'text-zinc-200 group-hover:text-white'}`}>
+              {item.title}
+            </p>
 
-          {/* Meta row */}
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <span
-              className="text-[14px] uppercase tracking-wide truncate min-w-0"
-              style={{ color: accent }}
-            >
-              {item.metadata.project.split('/')[1]}
-            </span>
-            {dueStatus && (
-              <span
-                className="text-[13px] font-medium px-2 py-1 rounded flex-shrink-0"
-                style={{
-                  color: dueStatus.color,
-                  backgroundColor: `${dueStatus.color}15`,
-                }}
-              >
-                {dueStatus.label}
-              </span>
+            {/* Meta row */}
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="text-[14px] uppercase tracking-wide truncate min-w-0"
+                  style={{ color: accent }}
+                >
+                  {item.metadata.project.split('/')[1]}
+                </span>
+                {item.metadata.workflow && (
+                  <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded ${
+                    item.metadata.workflow === 'main'
+                      ? 'bg-blue-500/20 text-blue-400'
+                      : 'bg-purple-500/20 text-purple-400'
+                  }`}>
+                    {item.metadata.workflow}
+                  </span>
+                )}
+              </div>
+              {dueStatus && (
+                <span
+                  className="text-[13px] font-medium px-2 py-1 rounded flex-shrink-0"
+                  style={{
+                    color: dueStatus.color,
+                    backgroundColor: `${dueStatus.color}15`,
+                  }}
+                >
+                  {dueStatus.label}
+                </span>
+              )}
+            </div>
+
+            {/* Progress bar for executing items */}
+            {isExecuting && totalCriteria > 0 && (
+              <div className="flex items-center gap-3 pt-1">
+                <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${(completedCriteria / totalCriteria) * 100}%`,
+                      backgroundColor: accent,
+                    }}
+                  />
+                </div>
+                <span className="text-[14px] text-zinc-400 tabular-nums">
+                  {completedCriteria}/{totalCriteria}
+                </span>
+              </div>
             )}
           </div>
-
-          {/* Progress bar for executing items */}
-          {isExecuting && totalCriteria > 0 && (
-            <div className="flex items-center gap-3 pt-1">
-              <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    width: `${(completedCriteria / totalCriteria) * 100}%`,
-                    backgroundColor: accent,
-                  }}
-                />
-              </div>
-              <span className="text-[14px] text-zinc-400 tabular-nums">
-                {completedCriteria}/{totalCriteria}
-              </span>
-            </div>
-          )}
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* Launch button outside the card, to the right */}
+      {showLaunchButton && item.metadata.status !== 'done' && (
+        <div className="flex-shrink-0 self-stretch">
+          <LaunchButton
+            folder={item.folder}
+            filename={item.filename}
+            status={item.metadata.status}
+            existingWorkflow={item.metadata.workflow}
+            compact
+            fullHeight
+          />
+        </div>
+      )}
+    </div>
   );
 }

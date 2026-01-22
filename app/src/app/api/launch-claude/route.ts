@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getWorkItem, getProjectPath } from '@/lib/work-items';
-import { launchClaudeInITerm } from '@/lib/terminal';
+import { getWorkItem, getProjectPath, updateWorkItemMetadata, WorkflowType } from '@/lib/work-items';
+import { launchClaudeInITerm, generateTmuxSessionName } from '@/lib/terminal';
 import { generatePromptForStatus } from '@/lib/prompts';
 import path from 'path';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { folder, filename, reuseSession = false } = body;
+    const { folder, filename, reuseSession = false, workflow } = body;
 
     if (!folder || !filename) {
       return NextResponse.json(
@@ -34,14 +34,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate tmux session name from work item ID
-    const tmuxSessionName = `flywheel-${workItem.metadata.id}`.replace(/[^a-zA-Z0-9-]/g, '-');
+    // Determine workflow type:
+    // 1. Use provided workflow from request (for new items where user selects)
+    // 2. Fall back to stored workflow in metadata (for subsequent launches)
+    // 3. Default to 'worktree' for backwards compatibility
+    const effectiveWorkflow: WorkflowType = workflow || workItem.metadata.workflow || 'worktree';
+
+    // Generate tmux session name based on workflow
+    // - For new items without stored session: generate based on workflow type
+    // - For existing items: use stored session name if available
+    let tmuxSessionName: string;
+    if (workItem.metadata.tmuxSession) {
+      tmuxSessionName = workItem.metadata.tmuxSession;
+    } else {
+      tmuxSessionName = generateTmuxSessionName(projectPath, effectiveWorkflow, workItem.metadata.id);
+    }
 
     // Get the work item file path relative to the flywheel-gsd repo
     const workItemPath = path.join(process.cwd(), '..', 'work', folder, filename);
 
-    // Generate prompt based on status
-    const initialPrompt = generatePromptForStatus(workItem, workItemPath);
+    // Generate prompt based on status, passing workflow for new items
+    const initialPrompt = generatePromptForStatus(workItem, workItemPath, workflow);
 
     // Launch iTerm2 with tmux and claude
     const result = await launchClaudeInITerm({
@@ -49,13 +62,26 @@ export async function POST(request: Request) {
       tmuxSessionName,
       initialPrompt,
       reuseSession,
+      workflow: effectiveWorkflow,
+      workItemId: workItem.metadata.id,
     });
 
     if (result.success) {
+      // Update work item metadata with workflow and session info
+      // This persists the session name for subsequent launches
+      if (!workItem.metadata.tmuxSession || !workItem.metadata.workflow) {
+        await updateWorkItemMetadata(folder, filename, {
+          workflow: effectiveWorkflow,
+          tmuxSession: tmuxSessionName,
+        });
+      }
+
       return NextResponse.json({
         success: true,
         tmuxSession: tmuxSessionName,
         reusedSession: result.reusedSession,
+        worktreePath: result.worktreePath,
+        workflow: effectiveWorkflow,
       });
     } else {
       return NextResponse.json(

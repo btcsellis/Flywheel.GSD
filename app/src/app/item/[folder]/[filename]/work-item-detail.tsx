@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { WorkItem, WorkItemStatus } from '@/lib/work-items';
+import type { WorkItem, WorkItemStatus, WorkflowType } from '@/lib/work-items';
 import { getNextStatusLabel } from '@/lib/prompts';
 
 const AREAS = [
@@ -23,11 +23,6 @@ const WORKFLOW_STEPS: { status: WorkItemStatus; label: string; num: string }[] =
   { status: 'done', label: 'Done', num: '✓' },
 ];
 
-// Launch options for the dropdown
-const LAUNCH_OPTIONS = [
-  { id: 'cc-new', label: 'Claude Code (new session)', reuseSession: false },
-  { id: 'cc-existing', label: 'Claude Code (existing session)', reuseSession: true },
-] as const;
 
 interface FormData {
   title: string;
@@ -39,6 +34,8 @@ interface FormData {
   dueDate: string;
   important: boolean;
   assignedSession: string;
+  workflow?: WorkflowType;
+  tmuxSession?: string;
   description: string;
   successCriteria: { text: string; completed: boolean }[];
   plan: string[];
@@ -72,6 +69,8 @@ function serializeToMarkdown(data: FormData): string {
   lines.push(`- status: ${data.status}`);
   if (data.dueDate) lines.push(`- due: ${data.dueDate}`);
   if (data.important) lines.push(`- important: true`);
+  if (data.workflow) lines.push(`- workflow: ${data.workflow}`);
+  if (data.tmuxSession) lines.push(`- tmux-session: ${data.tmuxSession}`);
   lines.push(`- assigned-session: ${data.assignedSession}`);
   lines.push('');
   lines.push('## Description');
@@ -189,6 +188,8 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
   const [saving, setSaving] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [launchMenuOpen, setLaunchMenuOpen] = useState(false);
+  const [workflowStep, setWorkflowStep] = useState<'workflow' | 'session' | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowType | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const launchMenuRef = useRef<HTMLDivElement>(null);
@@ -198,6 +199,8 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
     function handleClickOutside(event: MouseEvent) {
       if (launchMenuRef.current && !launchMenuRef.current.contains(event.target as Node)) {
         setLaunchMenuOpen(false);
+        setWorkflowStep(null);
+        setSelectedWorkflow(null);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -232,6 +235,8 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
     dueDate: item.metadata.dueDate || '',
     important: item.metadata.important || false,
     assignedSession: item.metadata.assignedSession || '',
+    workflow: item.metadata.workflow,
+    tmuxSession: item.metadata.tmuxSession,
     description: item.description,
     successCriteria: item.successCriteria.length > 0
       ? item.successCriteria
@@ -283,13 +288,36 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
     setFormData({ ...formData, status });
   };
 
+  const handleOpenLaunchMenu = () => {
+    setLaunchMenuOpen(true);
+    // For new items without workflow, show workflow selection first
+    if (formData.status === 'new' && !formData.workflow) {
+      setWorkflowStep('workflow');
+    } else {
+      setWorkflowStep('session');
+      setSelectedWorkflow(formData.workflow || null);
+    }
+  };
+
+  const handleSelectWorkflow = (workflow: WorkflowType) => {
+    setSelectedWorkflow(workflow);
+    setWorkflowStep('session');
+  };
+
   const handleLaunchClaude = async (reuseSession: boolean) => {
     setLaunching(true);
+    setLaunchMenuOpen(false);
+    setWorkflowStep(null);
     try {
       const res = await fetch('/api/launch-claude', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder: item.folder, filename: item.filename, reuseSession }),
+        body: JSON.stringify({
+          folder: item.folder,
+          filename: item.filename,
+          reuseSession,
+          workflow: selectedWorkflow,
+        }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -299,6 +327,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
       alert('Failed to launch Claude');
     } finally {
       setLaunching(false);
+      setSelectedWorkflow(null);
     }
   };
 
@@ -456,7 +485,15 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                         /* Action button between current and next */
                         <div className="relative flex justify-center" ref={launchMenuRef}>
                           <button
-                            onClick={() => setLaunchMenuOpen(!launchMenuOpen)}
+                            onClick={() => {
+                              if (launchMenuOpen) {
+                                setLaunchMenuOpen(false);
+                                setWorkflowStep(null);
+                                setSelectedWorkflow(null);
+                              } else {
+                                handleOpenLaunchMenu();
+                              }
+                            }}
                             disabled={launching}
                             className="flex items-center justify-center w-10 h-10 bg-[#D97757] text-white rounded-full hover:bg-[#c56a4d] transition-colors disabled:opacity-50"
                             title={getNextStatusLabel(formData.status)}
@@ -467,27 +504,75 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                           </button>
 
                           {launchMenuOpen && (
-                            <div className="absolute left-0 mt-1 w-56 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                            <div className="absolute left-0 mt-1 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden">
                               <div className="px-3 py-2 text-[14px] uppercase tracking-wider text-zinc-400 border-b border-zinc-700">
-                                Launch with
+                                {getNextStatusLabel(formData.status)}
                               </div>
-                              {LAUNCH_OPTIONS.map((option) => (
-                                <button
-                                  key={option.id}
-                                  onClick={() => {
-                                    setLaunchMenuOpen(false);
-                                    handleLaunchClaude(option.reuseSession);
-                                  }}
-                                  disabled={launching}
-                                  className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
-                                >
-                                  {option.label}
-                                </button>
-                              ))}
+
+                              {workflowStep === 'workflow' && (
+                                <>
+                                  <div className="px-3 py-2 text-xs text-zinc-500 border-b border-zinc-700/50">
+                                    Choose workflow type:
+                                  </div>
+                                  <button
+                                    onClick={() => handleSelectWorkflow('main')}
+                                    className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors"
+                                  >
+                                    <div className="text-sm text-zinc-300">Main Branch</div>
+                                    <div className="text-xs text-zinc-500">Work directly on main, commit & sync</div>
+                                  </button>
+                                  <button
+                                    onClick={() => handleSelectWorkflow('worktree')}
+                                    className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors border-t border-zinc-700/50"
+                                  >
+                                    <div className="text-sm text-zinc-300">New Worktree</div>
+                                    <div className="text-xs text-zinc-500">Isolated branch, creates PR on ship</div>
+                                  </button>
+                                </>
+                              )}
+
+                              {workflowStep === 'session' && (
+                                <>
+                                  {selectedWorkflow && (
+                                    <div className="px-3 py-1.5 text-xs text-zinc-500 border-b border-zinc-700/50 flex items-center gap-2">
+                                      <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase ${
+                                        selectedWorkflow === 'main' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'
+                                      }`}>
+                                        {selectedWorkflow}
+                                      </span>
+                                      {formData.status === 'new' && !formData.workflow && (
+                                        <button
+                                          onClick={() => setWorkflowStep('workflow')}
+                                          className="text-zinc-500 hover:text-zinc-300 underline"
+                                        >
+                                          change
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => handleLaunchClaude(false)}
+                                    disabled={launching}
+                                    className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                                  >
+                                    New session
+                                  </button>
+                                  <button
+                                    onClick={() => handleLaunchClaude(true)}
+                                    disabled={launching}
+                                    className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50 border-t border-zinc-700/50"
+                                  >
+                                    Existing session
+                                  </button>
+                                </>
+                              )}
+
                               <div className="border-t border-zinc-700">
                                 <button
                                   onClick={() => {
                                     setLaunchMenuOpen(false);
+                                    setWorkflowStep(null);
+                                    setSelectedWorkflow(null);
                                     setStatus(isBlocked ? 'new' : 'blocked');
                                   }}
                                   className={`w-full px-3 py-2 text-left text-sm transition-colors ${
@@ -574,6 +659,32 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             </label>
           </div>
         </div>
+
+        {/* Workflow Info (if set) */}
+        {(formData.workflow || formData.tmuxSession) && (
+          <div className="flex items-center gap-4 px-4 py-3 bg-zinc-900/50 rounded border border-zinc-800/50 text-sm">
+            {formData.workflow && (
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500">Workflow:</span>
+                <span className={`px-2 py-0.5 rounded text-xs uppercase ${
+                  formData.workflow === 'main'
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : 'bg-purple-500/20 text-purple-400'
+                }`}>
+                  {formData.workflow}
+                </span>
+              </div>
+            )}
+            {formData.tmuxSession && (
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-500">Session:</span>
+                <code className="px-2 py-0.5 bg-zinc-800 rounded text-zinc-400 font-mono text-xs">
+                  {formData.tmuxSession}
+                </code>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Description */}
         <div>
