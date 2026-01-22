@@ -33,6 +33,42 @@ export interface WorktreeResult {
 }
 
 /**
+ * Symlink the parent project's .claude directory to the worktree.
+ * This allows the worktree to inherit Claude Code permissions from the parent.
+ * - If parent has no .claude directory, silently skips (no error)
+ * - If worktree already has .claude, doesn't overwrite
+ */
+async function symlinkClaudeSettings(projectPath: string, worktreePath: string): Promise<void> {
+  const sourceClaudeDir = path.join(projectPath, '.claude');
+  const targetClaudeDir = path.join(worktreePath, '.claude');
+
+  try {
+    // Check if source .claude directory exists
+    await fs.access(sourceClaudeDir);
+  } catch {
+    // Parent has no .claude directory, nothing to symlink
+    return;
+  }
+
+  try {
+    // Check if target already has .claude (don't overwrite)
+    await fs.access(targetClaudeDir);
+    // Target exists, don't overwrite
+    return;
+  } catch {
+    // Target doesn't exist, proceed with symlink
+  }
+
+  try {
+    // Create symlink (use absolute path for reliability)
+    await fs.symlink(sourceClaudeDir, targetClaudeDir, 'dir');
+  } catch {
+    // Symlink failed - don't fail the worktree creation
+    // This could happen due to permissions or other issues
+  }
+}
+
+/**
  * Create a git worktree for isolated work on a feature/work item.
  * Worktree is created at ../{repo-name}-worktrees/{workItemId}/
  * Branch is created with name {workItemId}
@@ -62,6 +98,9 @@ export async function createWorktree(projectPath: string, workItemId: string): P
     await execAsync(`cd "${projectPath}" && git worktree add -b "${branchName}" "${worktreePath}"`, {
       timeout: 30000,
     });
+
+    // Symlink Claude Code settings from parent project
+    await symlinkClaudeSettings(projectPath, worktreePath);
 
     return { success: true, worktreePath, branchName };
   } catch (error) {
