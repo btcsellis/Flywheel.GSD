@@ -187,6 +187,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Edit(~/personal/flywheel-gsd/work/**)',
       'Read(~/.claude/**)',
       'Bash(ls:~/.claude/*)',
+      'Bash(mv:~/personal/flywheel-gsd/work/*)',
     ],
   },
 ];
