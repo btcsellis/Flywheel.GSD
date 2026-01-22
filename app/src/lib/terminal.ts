@@ -63,6 +63,20 @@ export async function createWorktree(projectPath: string, workItemId: string): P
       timeout: 30000,
     });
 
+    // Copy .claude/settings.json from main project if it exists
+    // This preserves Claude Code permissions in the worktree
+    const sourceSettings = path.join(projectPath, '.claude', 'settings.json');
+    const targetClaudeDir = path.join(worktreePath, '.claude');
+    const targetSettings = path.join(targetClaudeDir, 'settings.json');
+
+    try {
+      await fs.access(sourceSettings);
+      await fs.mkdir(targetClaudeDir, { recursive: true });
+      await fs.copyFile(sourceSettings, targetSettings);
+    } catch {
+      // Source settings don't exist or copy failed - that's fine, continue without
+    }
+
     return { success: true, worktreePath, branchName };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error creating worktree';
