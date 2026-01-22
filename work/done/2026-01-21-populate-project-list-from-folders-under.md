@@ -4,7 +4,7 @@
 - id: populate-project-list-from-folders-under-818
 - project: personal/flywheel-gsd
 - created: 2026-01-21
-- status: planned
+- status: done
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-populate-project-list-from-folders-under-818
 - assigned-session:
@@ -17,12 +17,12 @@ Instead, projects should be dynamically discovered by scanning the filesystem fo
 
 ## Success Criteria
 
-- [ ] API endpoint exists at `/api/projects` that scans the filesystem and returns available projects
-- [ ] API returns projects grouped by area (bellwether, sophia, personal) with their full paths
-- [ ] Only visible folders are included (excludes hidden folders starting with `.`)
-- [ ] "New Work Item" form (`app/src/app/new/page.tsx`) fetches projects dynamically from the API instead of using hardcoded `PROJECTS` constant
-- [ ] `project-paths.json` is either removed or kept in sync by reading from the same API/logic
-- [ ] Form still works correctly with area/project selection after the change
+- [x] API endpoint exists at `/api/projects` that scans the filesystem and returns available projects
+- [x] API returns projects grouped by area (bellwether, sophia, personal) with their full paths
+- [x] Only visible folders are included (excludes hidden folders starting with `.`)
+- [x] "New Work Item" form (`app/src/app/new/page.tsx`) fetches projects dynamically from the API instead of using hardcoded `PROJECTS` constant
+- [x] `project-paths.json` is either removed or kept in sync by reading from the same API/logic
+- [x] Form still works correctly with area/project selection after the change
 
 ## Plan
 
@@ -83,3 +83,13 @@ rm -rf ~/personal/.hidden-test
 - 2026-01-21T22:23:48.387Z Work item created
 - 2026-01-22T Success criteria defined
 - 2026-01-22T Plan created - 6 implementation steps defined
+- 2026-01-22T14:08 Step 1 complete: app/src/lib/projects.ts already existed with discoverProjects() and getProjectPathFromIdentifier()
+- 2026-01-22T14:08 Step 2 complete: Created /api/projects endpoint at app/src/app/api/projects/route.ts
+- 2026-01-22T14:09 Step 3 complete: Updated getProjectPath() in work-items.ts to use getProjectPathFromIdentifier() from projects.ts
+- 2026-01-22T14:10 Step 4 complete: Updated new/page.tsx to fetch projects dynamically with useEffect and loading state
+- 2026-01-22T14:10 Step 5 complete: Removed project-paths.json from repository
+- 2026-01-22T14:12 Step 6 complete: Verified discovery logic works (tested node script), hidden folders excluded, lint passes
+- 2026-01-22T14:13 All success criteria verified
+- 2026-01-22T14:13 Ready for /flywheel-ship
+- 2026-01-22T14:17 PR created: https://github.com/btcsellis/Flywheel.GSD/pull/3
+- 2026-01-22T14:17 Work item completed
