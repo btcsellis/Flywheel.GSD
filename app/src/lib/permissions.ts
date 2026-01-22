@@ -144,6 +144,21 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Bash(go get:*)',
     ],
   },
+  // Terminal
+  {
+    id: 'tmux',
+    label: 'Tmux commands',
+    description: 'tmux session management',
+    rules: [
+      'Bash(tmux:*)',
+      'Bash(tmux list-sessions:*)',
+      'Bash(tmux new-session:*)',
+      'Bash(tmux attach:*)',
+      'Bash(tmux kill-session:*)',
+      'Bash(tmux send-keys:*)',
+      'Bash(tmux has-session:*)',
+    ],
+  },
   // Other
   {
     id: 'mcp-tools',

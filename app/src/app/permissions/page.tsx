@@ -33,6 +33,7 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
   { id: 'lint-format', label: 'Lint & format', description: 'eslint, prettier, lint commands' },
   { id: 'package-info', label: 'Package info', description: 'npm list, outdated, info' },
   { id: 'install-deps', label: 'Install dependencies', description: 'npm install, pip install' },
+  { id: 'tmux', label: 'Tmux commands', description: 'tmux session management' },
   { id: 'mcp-tools', label: 'MCP tools', description: 'Model Context Protocol tools' },
   { id: 'web-fetch', label: 'Web fetches', description: 'Fetch URLs and web search' },
   { id: 'flywheel', label: 'Flywheel commands', description: '/flywheel-define, plan, execute, done' },
