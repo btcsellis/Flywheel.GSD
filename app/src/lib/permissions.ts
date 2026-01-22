@@ -70,6 +70,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     rules: [
       'Bash(git add:*)',
       'Bash(git commit:*)',
+      'Bash(git push)',
       'Bash(git push:*)',
       'Bash(git checkout:*)',
       'Bash(git switch:*)',
