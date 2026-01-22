@@ -123,3 +123,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Animated gradient for transitioning work items */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Transitioning card styles - using CSS custom property for accent color */
+.transitioning-card {
+  --tw-gradient-from: var(--transitioning-accent, #3b82f6);
+  --tw-gradient-to: transparent;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--transitioning-accent, #3b82f6) 15%, transparent) 0%,
+    transparent 50%,
+    color-mix(in srgb, var(--transitioning-accent, #3b82f6) 10%, transparent) 100%
+  );
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}

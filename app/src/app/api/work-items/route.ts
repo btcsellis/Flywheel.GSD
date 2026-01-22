@@ -1,5 +1,18 @@
 import { NextResponse } from 'next/server';
-import { createWorkItem } from '@/lib/work-items';
+import { createWorkItem, getAllWorkItems } from '@/lib/work-items';
+
+export async function GET() {
+  try {
+    const { backlog, active } = await getAllWorkItems();
+    return NextResponse.json({ backlog, active });
+  } catch (error) {
+    console.error('Error fetching work items:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch work items' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   try {

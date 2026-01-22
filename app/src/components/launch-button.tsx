@@ -9,11 +9,13 @@ interface LaunchButtonProps {
   filename: string;
   status: WorkItemStatus;
   existingWorkflow?: WorkflowType;
+  itemId?: string;
+  onLaunch?: (itemId: string) => void;
   compact?: boolean;
   fullHeight?: boolean;
 }
 
-export function LaunchButton({ folder, filename, status, existingWorkflow, compact = false, fullHeight = false }: LaunchButtonProps) {
+export function LaunchButton({ folder, filename, status, existingWorkflow, itemId, onLaunch, compact = false, fullHeight = false }: LaunchButtonProps) {
   const [launching, setLaunching] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [workflowStep, setWorkflowStep] = useState<'workflow' | 'session' | null>(null);
@@ -67,6 +69,20 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, compa
       const data = await res.json();
       if (!data.success) {
         alert(data.error || 'Failed to launch Claude');
+      } else {
+        // Mark item as transitioning and notify parent
+        if (itemId) {
+          try {
+            await fetch('/api/transitioning', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: itemId, previousStatus: status }),
+            });
+          } catch {
+            // Non-critical, ignore errors
+          }
+          onLaunch?.(itemId);
+        }
       }
     } catch {
       alert('Failed to launch Claude');

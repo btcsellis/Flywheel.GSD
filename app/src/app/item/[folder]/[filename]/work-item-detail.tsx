@@ -192,6 +192,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowType | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const launchMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -206,6 +207,52 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Poll for transitioning state and status changes
+  useEffect(() => {
+    const checkTransitioning = async () => {
+      try {
+        const res = await fetch('/api/transitioning');
+        if (res.ok) {
+          const data = await res.json();
+          const transitioning = data.transitioning as { id: string; previousStatus: string }[];
+          const itemTransition = transitioning.find(t => t.id === item.metadata.id);
+
+          if (itemTransition) {
+            setIsTransitioning(true);
+
+            // Check if status changed - if so, clear transitioning
+            const workItemsRes = await fetch('/api/work-items');
+            if (workItemsRes.ok) {
+              const workItemsData = await workItemsRes.json();
+              const allItems = [...(workItemsData.backlog || []), ...(workItemsData.active || [])];
+              const currentItem = allItems.find((i: WorkItem) => i.metadata.id === item.metadata.id);
+
+              if (currentItem && currentItem.metadata.status !== itemTransition.previousStatus) {
+                // Status changed, clear transitioning and refresh
+                await fetch(`/api/transitioning?id=${encodeURIComponent(item.metadata.id)}`, {
+                  method: 'DELETE',
+                });
+                setIsTransitioning(false);
+                router.refresh();
+              }
+            }
+          } else {
+            setIsTransitioning(false);
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    };
+
+    // Check immediately
+    checkTransitioning();
+
+    // Then poll every 5 seconds
+    const interval = setInterval(checkTransitioning, 5000);
+    return () => clearInterval(interval);
+  }, [item.metadata.id, router]);
 
   const { area: initialArea, project: initialProject } = parseAreaAndProject(item.metadata.project);
 
@@ -322,6 +369,18 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
       const data = await res.json();
       if (!data.success) {
         alert(data.error || 'Failed to launch Claude');
+      } else {
+        // Mark item as transitioning
+        try {
+          await fetch('/api/transitioning', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: item.metadata.id, previousStatus: formData.status }),
+          });
+          setIsTransitioning(true);
+        } catch {
+          // Non-critical, ignore errors
+        }
       }
     } catch {
       alert('Failed to launch Claude');
@@ -443,7 +502,10 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
         </div>
 
         {/* Status Stepper */}
-        <div className="p-4 bg-zinc-900 rounded border border-zinc-800 flex justify-center">
+        <div
+          className={`p-4 bg-zinc-900 rounded border border-zinc-800 flex justify-center ${isTransitioning ? 'transitioning-card' : ''}`}
+          style={{ ['--transitioning-accent' as string]: accent }}
+        >
           <div className="flex items-start">
             {WORKFLOW_STEPS.map((step, index) => {
               const isComplete = index < currentStepIndex;
