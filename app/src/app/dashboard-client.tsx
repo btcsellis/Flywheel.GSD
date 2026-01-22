@@ -313,10 +313,10 @@ function KanbanCard({
   const isImportant = item.metadata.important;
 
   return (
-    <div className="group flex gap-1 min-w-0">
+    <div className="group flex gap-1 min-w-0 items-stretch">
       <Link
         href={`/item/${item.folder}/${encodeURIComponent(item.filename)}`}
-        className="block flex-1 min-w-0"
+        className="flex flex-1 min-w-0"
       >
         <div
           className={`
