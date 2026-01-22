@@ -77,6 +77,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Bash(git merge:*)',
       'Bash(git rebase:*)',
       'Bash(git stash:*)',
+      'Bash(git worktree:*)',
     ],
   },
   // Build & Test
@@ -189,6 +190,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Read(~/.claude/**)',
       'Bash(ls:~/.claude/*)',
       'Bash(mv:~/personal/flywheel-gsd/work/*)',
+      'Bash(rm:*-worktrees/*)',
     ],
   },
 ];
