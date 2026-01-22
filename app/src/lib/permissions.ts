@@ -191,6 +191,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Bash(ls:~/.claude/*)',
       'Bash(mv:~/personal/flywheel-gsd/work/*)',
       'Bash(rm:*-worktrees/*)',
+      'Bash(cd:~/personal/flywheel-gsd*)',
     ],
   },
 ];
