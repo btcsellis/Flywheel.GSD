@@ -12,15 +12,16 @@ interface LaunchButtonProps {
   itemId?: string;
   onLaunch?: (itemId: string) => void;
   compact?: boolean;
-  fullHeight?: boolean;
 }
 
-export function LaunchButton({ folder, filename, status, existingWorkflow, itemId, onLaunch, compact = false, fullHeight = false }: LaunchButtonProps) {
+export function LaunchButton({ folder, filename, status, existingWorkflow, itemId, onLaunch, compact = false }: LaunchButtonProps) {
   const [launching, setLaunching] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [workflowStep, setWorkflowStep] = useState<'workflow' | 'session' | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowType | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number; right?: number; left?: number }>({});
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -35,6 +36,27 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
   }, []);
 
   const handleOpenMenu = () => {
+    // Calculate fixed position for dropdown to escape overflow containers
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownHeight = 200; // Approximate height of dropdown menu
+      const dropdownWidth = 256; // w-64 = 16rem = 256px
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < dropdownHeight;
+
+      if (openUpward) {
+        setMenuPosition({
+          bottom: window.innerHeight - rect.top + 4,
+          right: window.innerWidth - rect.right,
+        });
+      } else {
+        setMenuPosition({
+          top: rect.bottom + 4,
+          right: window.innerWidth - rect.right,
+        });
+      }
+    }
+
     setMenuOpen(true);
     // For new items without workflow, show workflow selection first
     // For items that already have a workflow, go straight to session selection
@@ -103,6 +125,7 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
       onClick={(e) => e.stopPropagation()}
     >
       <button
+        ref={buttonRef}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -117,9 +140,8 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
         disabled={launching}
         className={`
           flex items-center justify-center bg-[#D97757] text-white
-          hover:bg-[#c56a4d] transition-colors disabled:opacity-50
-          ${fullHeight ? 'h-full rounded' : 'rounded-full'}
-          ${compact ? 'w-7' : 'w-10'} ${!fullHeight && (compact ? 'h-7' : 'h-10')}
+          hover:bg-[#c56a4d] transition-colors disabled:opacity-50 rounded-full
+          ${compact ? 'w-9 h-9' : 'w-10 h-10'}
         `}
         title={actionLabel}
       >
@@ -129,10 +151,10 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
       </button>
 
       {menuOpen && (
-        <div className={`
-          absolute mt-1 w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden
-          ${compact ? 'right-0' : 'left-0'}
-        `}>
+        <div
+          className="fixed w-64 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 overflow-hidden"
+          style={menuPosition}
+        >
           <div className="px-3 py-2 text-xs uppercase tracking-wider text-zinc-400 border-b border-zinc-700">
             {actionLabel}
           </div>

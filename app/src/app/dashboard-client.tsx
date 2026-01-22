@@ -313,14 +313,14 @@ function KanbanCard({
   const isImportant = item.metadata.important;
 
   return (
-    <div className="group flex gap-1 min-w-0 items-stretch">
+    <div className="group flex gap-1 min-w-0 items-center">
       <Link
         href={`/item/${item.folder}/${encodeURIComponent(item.filename)}`}
         className="flex flex-1 min-w-0"
       >
         <div
           className={`
-            relative h-full p-4 rounded bg-zinc-900 border transition-all duration-150
+            relative p-4 rounded bg-zinc-900 border transition-all duration-150
             ${blocked || isImportant
               ? 'border-red-500/30 hover:border-red-500/50'
               : 'border-zinc-800 hover:border-zinc-700'
@@ -399,7 +399,7 @@ function KanbanCard({
 
       {/* Launch button outside the card, to the right */}
       {showLaunchButton && item.metadata.status !== 'done' && (
-        <div className="flex-shrink-0 self-stretch">
+        <div className="flex-shrink-0">
           <LaunchButton
             folder={item.folder}
             filename={item.filename}
@@ -408,7 +408,6 @@ function KanbanCard({
             itemId={item.metadata.id}
             onLaunch={onLaunch}
             compact
-            fullHeight
           />
         </div>
       )}
