@@ -157,6 +157,19 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     description: 'Fetch URLs and web search',
     rules: ['WebFetch', 'WebSearch'],
   },
+  // Flywheel
+  {
+    id: 'flywheel',
+    label: 'Flywheel commands',
+    description: '/flywheel-define, plan, execute, done',
+    rules: [
+      'Skill(flywheel-define)',
+      'Skill(flywheel-plan)',
+      'Skill(flywheel-execute)',
+      'Skill(flywheel-done)',
+      'Skill(flywheel-new)',
+    ],
+  },
 ];
 
 const GLOBAL_SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');

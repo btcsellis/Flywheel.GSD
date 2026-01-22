@@ -35,6 +35,7 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
   { id: 'install-deps', label: 'Install dependencies', description: 'npm install, pip install' },
   { id: 'mcp-tools', label: 'MCP tools', description: 'Model Context Protocol tools' },
   { id: 'web-fetch', label: 'Web fetches', description: 'Fetch URLs and web search' },
+  { id: 'flywheel', label: 'Flywheel commands', description: '/flywheel-define, plan, execute, done' },
 ];
 
 const AREA_COLORS: Record<string, string> = {
