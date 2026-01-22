@@ -114,18 +114,48 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
     setTransitioningIds(prev => new Set([...prev, itemId]));
   }, []);
 
-  // Build a matrix: area -> status -> items[]
-  const matrix: Record<Area, Record<WorkItemStatus, WorkItem[]>> = {
-    bellwether: { new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: [] },
-    sophia: { new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: [] },
-    personal: { new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: [] },
+  // Build a matrix: area -> project -> status -> items[]
+  const matrix: Record<Area, Record<string, Record<WorkItemStatus, WorkItem[]>>> = {
+    bellwether: {},
+    sophia: {},
+    personal: {},
   };
+
+  const emptyStatusRecord = (): Record<WorkItemStatus, WorkItem[]> => ({
+    new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: []
+  });
 
   for (const item of allItems) {
     const area = getArea(item.metadata.project);
+    const projectName = item.metadata.project.split('/')[1] || 'unknown';
     const status = item.metadata.status;
-    matrix[area][status].push(item);
+
+    if (!matrix[area][projectName]) {
+      matrix[area][projectName] = emptyStatusRecord();
+    }
+    matrix[area][projectName][status].push(item);
   }
+
+  // Helper to get sorted projects for an area (only those with items)
+  const getProjectsForArea = (area: Area): string[] => {
+    return Object.keys(matrix[area]).sort((a, b) => a.localeCompare(b));
+  };
+
+  // Helper to count items in a project across all workflow statuses
+  const getProjectItemCount = (area: Area, project: string): number => {
+    return WORKFLOW_STEPS.reduce(
+      (sum, { status }) => sum + (matrix[area][project]?.[status]?.length || 0),
+      0
+    );
+  };
+
+  // Helper to count total items in an area across all projects
+  const getAreaItemCount = (area: Area): number => {
+    return getProjectsForArea(area).reduce(
+      (sum, project) => sum + getProjectItemCount(area, project),
+      0
+    );
+  };
 
   return (
     <div>
@@ -180,61 +210,99 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
 
             {/* Swimlanes */}
             {AREAS.map(({ key, label, accent, bg }, areaIndex) => {
-              const areaItems = matrix[key];
-              const totalInArea = WORKFLOW_STEPS.reduce(
-                (sum, { status }) => sum + (areaItems[status]?.length || 0),
-                0
-              );
+              const projects = getProjectsForArea(key);
+              const totalInArea = getAreaItemCount(key);
 
               return (
-                <div
-                  key={key}
-                  className={`grid grid-cols-[160px_repeat(5,1fr)] gap-1 ${areaIndex > 0 ? 'mt-4' : ''}`}
-                >
-                  {/* Swimlane Label */}
+                <div key={key} className={areaIndex > 0 ? 'mt-6' : ''}>
+                  {/* Area Header */}
                   <div
-                    className="relative p-4 flex flex-col justify-center rounded-l"
+                    className="relative p-3 rounded-t flex items-center gap-3"
                     style={{ backgroundColor: bg }}
                   >
                     <div
-                      className="absolute left-0 top-0 bottom-0 w-1 rounded-l"
+                      className="absolute left-0 top-0 bottom-0 w-1 rounded-tl"
                       style={{ backgroundColor: accent }}
                     />
                     <span
-                      className="text-lg font-semibold tracking-wide"
+                      className="text-lg font-semibold tracking-wide pl-2"
                       style={{ color: accent }}
                     >
                       {label}
                     </span>
-                    <span className="text-[14px] text-zinc-400 mt-0.5">
-                      {totalInArea} items
+                    <span className="text-[13px] text-zinc-500">
+                      {totalInArea} {totalInArea === 1 ? 'item' : 'items'}
                     </span>
                   </div>
 
-                  {/* Cells for each workflow step */}
-                  {WORKFLOW_STEPS.map(({ status }, stepIndex) => {
-                    const items = areaItems[status] || [];
-                    const isLast = stepIndex === WORKFLOW_STEPS.length - 1;
-                    return (
-                      <div
-                        key={status}
-                        className={`min-h-[120px] min-w-0 p-3 bg-zinc-900/20 border-l border-zinc-800/30 ${isLast ? 'rounded-r' : ''}`}
-                        style={{ backgroundColor: items.length > 0 ? bg : undefined }}
-                      >
-                        <div className="space-y-3 min-w-0">
-                          {items.map(item => (
-                            <KanbanCard
-                              key={item.filename}
-                              item={item}
-                              accent={accent}
-                              isTransitioning={transitioningIds.has(item.metadata.id)}
-                              onLaunch={handleLaunch}
-                            />
-                          ))}
-                        </div>
+                  {/* Project Sub-Swimlanes */}
+                  {projects.length === 0 ? (
+                    <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-1">
+                      <div className="p-3 text-zinc-600 text-sm italic">
+                        No items
                       </div>
-                    );
-                  })}
+                      {WORKFLOW_STEPS.map(({ status }, stepIndex) => (
+                        <div
+                          key={status}
+                          className={`min-h-[60px] p-3 bg-zinc-900/10 border-l border-zinc-800/30 ${stepIndex === WORKFLOW_STEPS.length - 1 ? 'rounded-br' : ''}`}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    projects.map((projectName, projectIndex) => {
+                      const projectItems = matrix[key][projectName];
+                      const projectTotal = getProjectItemCount(key, projectName);
+                      const isLastProject = projectIndex === projects.length - 1;
+
+                      return (
+                        <div
+                          key={projectName}
+                          className="grid grid-cols-[160px_repeat(5,1fr)] gap-1"
+                        >
+                          {/* Project Label */}
+                          <div
+                            className={`p-3 flex flex-col justify-center ${isLastProject ? 'rounded-bl' : ''}`}
+                            style={{ backgroundColor: `${bg}` }}
+                          >
+                            <span
+                              className="text-sm font-medium truncate"
+                              style={{ color: `${accent}cc` }}
+                            >
+                              {projectName}
+                            </span>
+                            <span className="text-[12px] text-zinc-500">
+                              {projectTotal} {projectTotal === 1 ? 'item' : 'items'}
+                            </span>
+                          </div>
+
+                          {/* Cells for each workflow step */}
+                          {WORKFLOW_STEPS.map(({ status }, stepIndex) => {
+                            const items = projectItems?.[status] || [];
+                            const isLast = stepIndex === WORKFLOW_STEPS.length - 1;
+                            return (
+                              <div
+                                key={status}
+                                className={`min-h-[100px] min-w-0 p-3 bg-zinc-900/20 border-l border-zinc-800/30 ${isLast && isLastProject ? 'rounded-br' : ''}`}
+                                style={{ backgroundColor: items.length > 0 ? bg : undefined }}
+                              >
+                                <div className="space-y-3 min-w-0">
+                                  {items.map(item => (
+                                    <KanbanCard
+                                      key={item.filename}
+                                      item={item}
+                                      accent={accent}
+                                      isTransitioning={transitioningIds.has(item.metadata.id)}
+                                      onLaunch={handleLaunch}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               );
             })}
