@@ -78,6 +78,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Bash(git rebase:*)',
       'Bash(git stash:*)',
       'Bash(git worktree:*)',
+      'Bash(git branch:*)',
     ],
   },
   // Build & Test
