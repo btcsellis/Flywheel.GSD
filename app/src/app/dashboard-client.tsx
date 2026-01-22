@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { LaunchButton } from '@/components/launch-button';
 import type { WorkItem, WorkItemStatus, WorkflowType } from '@/lib/work-items';
 
@@ -189,12 +190,12 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
         <div className="overflow-x-auto">
           <div className="min-w-[1200px] w-full">
             {/* Column Headers */}
-            <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-1 mb-1">
-              <div className="p-3" /> {/* Empty corner */}
+            <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-px bg-zinc-800 mb-px">
+              <div className="p-3 bg-zinc-950" /> {/* Empty corner */}
               {WORKFLOW_STEPS.map(({ label, num }) => (
                 <div
                   key={num}
-                  className="p-3 bg-zinc-900/50 border-b border-zinc-800"
+                  className="p-3 bg-zinc-900"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[14px] text-zinc-500 tabular-nums">
@@ -237,71 +238,85 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
 
                   {/* Project Sub-Swimlanes */}
                   {projects.length === 0 ? (
-                    <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-1">
-                      <div className="p-3 text-zinc-600 text-sm italic">
+                    <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-px bg-zinc-800">
+                      <div className="p-3 text-zinc-600 text-sm italic bg-zinc-950/50">
                         No items
                       </div>
                       {WORKFLOW_STEPS.map(({ status }, stepIndex) => (
                         <div
                           key={status}
-                          className={`min-h-[60px] p-3 bg-zinc-900/10 border-l border-zinc-800/30 ${stepIndex === WORKFLOW_STEPS.length - 1 ? 'rounded-br' : ''}`}
+                          className={`min-h-[60px] p-3 bg-zinc-950/50 ${stepIndex === WORKFLOW_STEPS.length - 1 ? 'rounded-br' : ''}`}
                         />
                       ))}
                     </div>
                   ) : (
-                    projects.map((projectName, projectIndex) => {
-                      const projectItems = matrix[key][projectName];
-                      const projectTotal = getProjectItemCount(key, projectName);
-                      const isLastProject = projectIndex === projects.length - 1;
+                    <div className="flex flex-col gap-px bg-zinc-800">
+                      {projects.map((projectName, projectIndex) => {
+                        const projectItems = matrix[key][projectName];
+                        const projectTotal = getProjectItemCount(key, projectName);
+                        const isLastProject = projectIndex === projects.length - 1;
 
-                      return (
-                        <div
-                          key={projectName}
-                          className="grid grid-cols-[160px_repeat(5,1fr)] gap-1"
-                        >
-                          {/* Project Label */}
+                        return (
                           <div
-                            className={`p-3 flex flex-col justify-center ${isLastProject ? 'rounded-bl' : ''}`}
-                            style={{ backgroundColor: `${bg}` }}
+                            key={projectName}
+                            className="grid grid-cols-[160px_repeat(5,1fr)] gap-px"
                           >
-                            <span
-                              className="text-sm font-medium truncate"
-                              style={{ color: `${accent}cc` }}
+                            {/* Project Label */}
+                            <div
+                              className={`p-3 flex items-center justify-between ${isLastProject ? 'rounded-bl' : ''}`}
+                              style={{ backgroundColor: `${bg}` }}
                             >
-                              {projectName}
-                            </span>
-                            <span className="text-[12px] text-zinc-500">
-                              {projectTotal} {projectTotal === 1 ? 'item' : 'items'}
-                            </span>
-                          </div>
-
-                          {/* Cells for each workflow step */}
-                          {WORKFLOW_STEPS.map(({ status }, stepIndex) => {
-                            const items = projectItems?.[status] || [];
-                            const isLast = stepIndex === WORKFLOW_STEPS.length - 1;
-                            return (
-                              <div
-                                key={status}
-                                className={`min-h-[100px] min-w-0 p-3 bg-zinc-900/20 border-l border-zinc-800/30 ${isLast && isLastProject ? 'rounded-br' : ''}`}
-                                style={{ backgroundColor: items.length > 0 ? bg : undefined }}
-                              >
-                                <div className="space-y-3 min-w-0">
-                                  {items.map(item => (
-                                    <KanbanCard
-                                      key={item.filename}
-                                      item={item}
-                                      accent={accent}
-                                      isTransitioning={transitioningIds.has(item.metadata.id)}
-                                      onLaunch={handleLaunch}
-                                    />
-                                  ))}
-                                </div>
+                              <div className="flex flex-col justify-center min-w-0">
+                                <span
+                                  className="text-sm font-medium truncate"
+                                  style={{ color: `${accent}cc` }}
+                                >
+                                  {projectName}
+                                </span>
+                                <span className="text-[12px] text-zinc-500">
+                                  {projectTotal} {projectTotal === 1 ? 'item' : 'items'}
+                                </span>
                               </div>
-                            );
-                          })}
+                              <Link
+                                href={`/new?project=${key}/${projectName}`}
+                                className="flex-shrink-0 p-1 rounded hover:bg-zinc-800/50 transition-colors"
+                                title={`Add new item to ${projectName}`}
+                              >
+                                <Plus
+                                  className="w-4 h-4"
+                                  style={{ color: `${accent}99` }}
+                                />
+                              </Link>
+                            </div>
+
+                            {/* Cells for each workflow step */}
+                            {WORKFLOW_STEPS.map(({ status }, stepIndex) => {
+                              const items = projectItems?.[status] || [];
+                              const isLast = stepIndex === WORKFLOW_STEPS.length - 1;
+                              return (
+                                <div
+                                  key={status}
+                                  className={`min-h-[100px] min-w-0 p-3 bg-zinc-900/50 ${isLast && isLastProject ? 'rounded-br' : ''}`}
+                                  style={{ backgroundColor: items.length > 0 ? bg : undefined }}
+                                >
+                                  <div className="space-y-3 min-w-0">
+                                    {items.map(item => (
+                                      <KanbanCard
+                                        key={item.filename}
+                                        item={item}
+                                        accent={accent}
+                                        isTransitioning={transitioningIds.has(item.metadata.id)}
+                                        onLaunch={handleLaunch}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
                         </div>
                       );
-                    })
+                    })}
+                    </div>
                   )}
                 </div>
               );

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const AREAS = [
@@ -63,10 +63,20 @@ function AutoResizeTextarea({
 }
 
 export default function NewWorkItemPage() {
+  return (
+    <Suspense fallback={<div className="text-zinc-500">Loading...</div>}>
+      <NewWorkItemContent />
+    </Suspense>
+  );
+}
+
+function NewWorkItemContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projects, setProjects] = useState<ProjectsByArea>({});
+  const [initializedFromUrl, setInitializedFromUrl] = useState(false);
 
   const [title, setTitle] = useState('');
   const [area, setArea] = useState<Area>('personal');
@@ -81,6 +91,34 @@ export default function NewWorkItemPage() {
   const [context, setContext] = useState('');
   const [files, setFiles] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
+
+  // Parse project from URL query param (format: "area/projectName")
+  useEffect(() => {
+    if (initializedFromUrl || projectsLoading) return;
+
+    const projectParam = searchParams.get('project');
+    if (projectParam) {
+      const [urlArea, urlProject] = projectParam.split('/');
+      if (urlArea && AREAS.some(a => a.value === urlArea)) {
+        setArea(urlArea as Area);
+        if (urlProject) {
+          // Check if project exists in the fetched list
+          const areaProjects = projects[urlArea] || [];
+          const projectExists = areaProjects.some(p => p.name === urlProject);
+          if (projectExists) {
+            setProject(urlProject);
+          } else {
+            // Set as custom project
+            setProject('custom');
+            setCustomProject(urlProject);
+          }
+        }
+        setInitializedFromUrl(true);
+      }
+    } else {
+      setInitializedFromUrl(true);
+    }
+  }, [searchParams, initializedFromUrl, projectsLoading, projects]);
 
   // Fetch projects on mount
   useEffect(() => {
