@@ -4,7 +4,7 @@
 - id: permissions-errors-922
 - project: personal/flywheel-gsd
 - created: 2026-01-23
-- status: planned
+- status: executing
 - workflow: main
 - tmux-session: flywheel-gsd
 - assigned-session:
@@ -27,10 +27,10 @@ The pattern is: use SPACE for wildcard matching, use `:*` only at the END for pr
 
 ## Success Criteria
 
-- [ ] All permission rules in `app/src/lib/permissions.ts` use valid syntax
-- [ ] Use space-based wildcard matching (e.g., `Bash(rm *)`) instead of invalid `:*` mid-pattern
+- [x] All permission rules in `app/src/lib/permissions.ts` use valid syntax
+- [x] Use space-based wildcard matching (e.g., `Bash(rm *)`) instead of invalid `:*` mid-pattern
 - [ ] No "Settings Error" when launching Claude Code
-- [ ] Build passes with no type errors
+- [x] Build passes with no type errors
 
 ## Implementation Plan
 
@@ -63,3 +63,7 @@ The pattern is: use SPACE for wildcard matching, use `:*` only at the END for pr
 - 2026-01-23T14:40:24.113Z Work item created
 - 2026-01-23T14:45:00.000Z Goals defined, success criteria added
 - 2026-01-23T14:47:00.000Z Implementation plan created
+- 2026-01-23 15:02 Status: executing
+- 2026-01-23 15:02 Fixed 8 invalid permission rules in app/src/lib/permissions.ts (lines 193-200)
+- 2026-01-23 15:02 Changed colon to space for wildcard matching in flywheel category
+- 2026-01-23 15:02 Build passed with no type errors
