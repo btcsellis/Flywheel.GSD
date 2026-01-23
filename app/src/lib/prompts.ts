@@ -14,11 +14,10 @@ export interface StatusAction {
 export const STATUS_ACTIONS: Record<WorkItemStatus, StatusAction> = {
   'new': { targetStatus: 'defined', label: 'Define', command: '/flywheel-define', mode: 'interactive' },
   'defined': { targetStatus: 'planned', label: 'Plan', command: '/flywheel-plan', mode: 'interactive' },
-  'planned': { targetStatus: 'executing', label: 'Execute', command: '/flywheel-execute', mode: 'autonomous' },
-  'executing': { targetStatus: 'review', label: 'Continue', command: '/flywheel-execute', mode: 'autonomous' },
+  'planned': { targetStatus: 'review', label: 'Execute', command: '/flywheel-execute', mode: 'autonomous' },
   'review': { targetStatus: 'done', label: 'Done', command: '/flywheel-done', mode: 'interactive' },
   'done': { targetStatus: 'done', label: 'Complete', command: '', mode: 'interactive' },
-  'blocked': { targetStatus: 'executing', label: 'Unblock', command: '/flywheel-execute', mode: 'interactive' },
+  'blocked': { targetStatus: 'planned', label: 'Unblock', command: '/flywheel-execute', mode: 'interactive' },
 };
 
 /**
@@ -60,11 +59,6 @@ Run ${action.command} to create the plan.`;
       return baseContext + `This work item has a plan ready for execution.
 
 Run ${action.command} to begin autonomous execution.`;
-
-    case 'executing':
-      return baseContext + `This work item is in progress.
-
-Run ${action.command} to continue autonomous execution.`;
 
     case 'review':
       return baseContext + `This work item is ready for review and shipping.

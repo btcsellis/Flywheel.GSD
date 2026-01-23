@@ -18,8 +18,7 @@ const WORKFLOW_STEPS: { status: WorkItemStatus; label: string; num: string }[] =
   { status: 'new', label: 'New', num: '01' },
   { status: 'defined', label: 'Defined', num: '02' },
   { status: 'planned', label: 'Planned', num: '03' },
-  { status: 'executing', label: 'Executing', num: '04' },
-  { status: 'review', label: 'Review', num: '05' },
+  { status: 'review', label: 'Review', num: '04' },
 ];
 
 function getArea(project: string): Area {
@@ -123,7 +122,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
   };
 
   const emptyStatusRecord = (): Record<WorkItemStatus, WorkItem[]> => ({
-    new: [], defined: [], planned: [], executing: [], review: [], done: [], blocked: []
+    new: [], defined: [], planned: [], review: [], done: [], blocked: []
   });
 
   for (const item of allItems) {
@@ -177,7 +176,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
         <div className="mb-6 flex items-center gap-4 text-sm text-zinc-400">
           <span>{allItems.length} items</span>
           <span className="text-zinc-600">|</span>
-          <span className="text-emerald-400">{allItems.filter(i => i.metadata.status === 'executing').length} executing</span>
+          <span className="text-emerald-400">{allItems.filter(i => i.metadata.status === 'planned').length} planned</span>
           {transitioningIds.size > 0 && (
             <>
               <span className="text-zinc-600">|</span>
@@ -190,7 +189,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
         <div className="overflow-x-auto">
           <div className="min-w-[1200px] w-full">
             {/* Column Headers */}
-            <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-px bg-zinc-800 mb-px">
+            <div className="grid grid-cols-[160px_repeat(4,1fr)] gap-px bg-zinc-800 mb-px">
               <div className="p-3 bg-zinc-950" /> {/* Empty corner */}
               {WORKFLOW_STEPS.map(({ label, num }) => (
                 <div
@@ -238,7 +237,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
 
                   {/* Project Sub-Swimlanes */}
                   {projects.length === 0 ? (
-                    <div className="grid grid-cols-[160px_repeat(5,1fr)] gap-px bg-zinc-800">
+                    <div className="grid grid-cols-[160px_repeat(4,1fr)] gap-px bg-zinc-800">
                       <div className="p-3 text-zinc-600 text-sm italic bg-zinc-950/50">
                         No items
                       </div>
@@ -259,7 +258,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
                         return (
                           <div
                             key={projectName}
-                            className="grid grid-cols-[160px_repeat(5,1fr)] gap-px"
+                            className="grid grid-cols-[160px_repeat(4,1fr)] gap-px"
                           >
                             {/* Project Label */}
                             <div
@@ -377,7 +376,8 @@ function KanbanCard({
 }) {
   const completedCriteria = item.successCriteria.filter(c => c.completed).length;
   const totalCriteria = item.successCriteria.length;
-  const isExecuting = item.metadata.status === 'executing';
+  // Show progress for planned items that are transitioning or have partial completion
+  const showProgress = item.metadata.status === 'planned' && (isTransitioning || completedCriteria > 0);
 
   // Check if due date is approaching or past
   const getDueDateStatus = () => {
@@ -459,8 +459,8 @@ function KanbanCard({
               )}
             </div>
 
-            {/* Progress bar for executing items */}
-            {isExecuting && totalCriteria > 0 && (
+            {/* Progress bar for planned items being executed */}
+            {showProgress && totalCriteria > 0 && (
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <div

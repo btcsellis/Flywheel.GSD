@@ -18,8 +18,7 @@ const WORKFLOW_STEPS: { status: WorkItemStatus; label: string; num: string }[] =
   { status: 'new', label: 'New', num: '1' },
   { status: 'defined', label: 'Defined', num: '2' },
   { status: 'planned', label: 'Planned', num: '3' },
-  { status: 'executing', label: 'Executing', num: '4' },
-  { status: 'review', label: 'Review', num: '5' },
+  { status: 'review', label: 'Review', num: '4' },
   { status: 'done', label: 'Done', num: '✓' },
 ];
 
