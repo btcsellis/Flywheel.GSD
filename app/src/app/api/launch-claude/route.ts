@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getWorkItem, getProjectPath, updateWorkItemMetadata, WorkflowType } from '@/lib/work-items';
-import { launchClaudeInITerm, generateTmuxSessionName } from '@/lib/terminal';
+import { launchClaudeInITerm, generateTmuxSessionName, tmuxSessionExists } from '@/lib/terminal';
 import { generatePromptForStatus } from '@/lib/prompts';
 import path from 'path';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { folder, filename, reuseSession = false, workflow } = body;
+    const { folder, filename, workflow } = body;
 
     if (!folder || !filename) {
       return NextResponse.json(
@@ -55,6 +55,10 @@ export async function POST(request: Request) {
 
     // Generate prompt based on status, passing workflow for new items
     const initialPrompt = generatePromptForStatus(workItem, workItemPath, workflow);
+
+    // Auto-detect if tmux session exists - reuse if it does, create new if not
+    const sessionExists = await tmuxSessionExists(tmuxSessionName);
+    const reuseSession = sessionExists;
 
     // Launch iTerm2 with tmux and claude
     const result = await launchClaudeInITerm({
