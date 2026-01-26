@@ -666,3 +666,4 @@ export function getFlywheelRules(): string[] {
   const flywheelCategory = PERMISSION_CATEGORIES.find((c) => c.id === 'flywheel');
   return flywheelCategory?.rules || [];
 }
+

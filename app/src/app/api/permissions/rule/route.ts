@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest) {
 
     if (!scope || typeof scope !== 'string') {
       return NextResponse.json(
-        { error: 'scope must be "global" or a project path' },
+        { error: 'scope must be "global", "area:<name>", or a project path' },
         { status: 400 }
       );
     }
