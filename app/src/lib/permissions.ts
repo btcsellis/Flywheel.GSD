@@ -603,3 +603,13 @@ export async function writeProjectRule(
 
   await writeSettingsFile(settingsPath, newSettings);
 }
+
+/**
+ * Get all rules from the flywheel category.
+ * These rules should NOT be rewritten when copying permissions to worktrees,
+ * as they always reference the main flywheel-gsd repo.
+ */
+export function getFlywheelRules(): string[] {
+  const flywheelCategory = PERMISSION_CATEGORIES.find((c) => c.id === 'flywheel');
+  return flywheelCategory?.rules || [];
+}

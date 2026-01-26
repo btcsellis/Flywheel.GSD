@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+import { getFlywheelRules, ClaudeSettings } from './permissions';
 
 const execAsync = promisify(exec);
 
@@ -33,12 +34,103 @@ export interface WorktreeResult {
 }
 
 /**
- * Symlink the parent project's .claude directory to the worktree.
- * This allows the worktree to inherit Claude Code permissions from the parent.
+ * Rewrite a path-based permission rule to use the worktree path.
+ * Only rewrites paths that match the project path, not flywheel-specific paths.
+ *
+ * @param rule - The permission rule string (e.g., "Read(~/personal/project/**)")
+ * @param projectPath - The original project path (e.g., "/Users/foo/personal/project")
+ * @param worktreePath - The worktree path (e.g., "/Users/foo/personal/project-worktrees/work-item-id")
+ * @returns The rewritten rule, or the original if no rewrite needed
+ */
+function rewritePathInRule(rule: string, projectPath: string, worktreePath: string): string {
+  const homeDir = os.homedir();
+
+  // Convert project path to both formats: with ~ and expanded
+  const projectWithTilde = projectPath.replace(homeDir, '~');
+  const projectExpanded = projectPath.startsWith('~')
+    ? projectPath.replace('~', homeDir)
+    : projectPath;
+
+  // Convert worktree path to both formats
+  const worktreeWithTilde = worktreePath.replace(homeDir, '~');
+  const worktreeExpanded = worktreePath.startsWith('~')
+    ? worktreePath.replace('~', homeDir)
+    : worktreePath;
+
+  // Try to replace path in the rule (handle both ~ and expanded formats)
+  let rewritten = rule;
+
+  // Replace ~ format first (more specific)
+  if (rewritten.includes(projectWithTilde)) {
+    rewritten = rewritten.replace(projectWithTilde, worktreeWithTilde);
+  }
+  // Then try expanded format
+  else if (rewritten.includes(projectExpanded)) {
+    rewritten = rewritten.replace(projectExpanded, worktreeExpanded);
+  }
+
+  return rewritten;
+}
+
+/**
+ * Rewrite permissions for a worktree, replacing project paths with worktree paths.
+ * Flywheel-specific rules are NOT rewritten (they always reference the main flywheel-gsd repo).
+ *
+ * @param rules - Array of permission rules
+ * @param projectPath - The original project path
+ * @param worktreePath - The worktree path
+ * @param flywheelRules - Set of flywheel rules that should not be rewritten
+ * @returns Array of rewritten rules
+ */
+function rewritePermissionsForWorktree(
+  rules: string[],
+  projectPath: string,
+  worktreePath: string,
+  flywheelRules: Set<string>
+): string[] {
+  return rules.map((rule) => {
+    // Don't rewrite flywheel-specific rules
+    if (flywheelRules.has(rule)) {
+      return rule;
+    }
+    return rewritePathInRule(rule, projectPath, worktreePath);
+  });
+}
+
+/**
+ * Read and parse a Claude settings JSON file.
+ */
+async function readClaudeSettingsFile(filePath: string): Promise<ClaudeSettings | null> {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(content) as ClaudeSettings;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Write Claude settings to a JSON file.
+ */
+async function writeClaudeSettingsFile(filePath: string, settings: ClaudeSettings): Promise<void> {
+  await fs.writeFile(filePath, JSON.stringify(settings, null, 2) + '\n', 'utf-8');
+}
+
+/**
+ * Copy the parent project's .claude settings to the worktree with path rewriting.
+ * This allows the worktree to inherit Claude Code permissions from the parent,
+ * with paths rewritten to reference the worktree location.
+ *
  * - If parent has no .claude directory, silently skips (no error)
  * - If worktree already has .claude, doesn't overwrite
+ * - Copies both settings.json and settings.local.json (if they exist)
+ * - Rewrites path-based permissions to use worktree path
+ * - Does NOT rewrite flywheel-specific permissions
  */
-async function symlinkClaudeSettings(projectPath: string, worktreePath: string): Promise<void> {
+async function copyClaudeSettingsForWorktree(
+  projectPath: string,
+  worktreePath: string
+): Promise<void> {
   const sourceClaudeDir = path.join(projectPath, '.claude');
   const targetClaudeDir = path.join(worktreePath, '.claude');
 
@@ -46,7 +138,7 @@ async function symlinkClaudeSettings(projectPath: string, worktreePath: string):
     // Check if source .claude directory exists
     await fs.access(sourceClaudeDir);
   } catch {
-    // Parent has no .claude directory, nothing to symlink
+    // Parent has no .claude directory, nothing to copy
     return;
   }
 
@@ -56,14 +148,66 @@ async function symlinkClaudeSettings(projectPath: string, worktreePath: string):
     // Target exists, don't overwrite
     return;
   } catch {
-    // Target doesn't exist, proceed with symlink
+    // Target doesn't exist, proceed with copy
   }
 
+  // Get flywheel rules that should not be rewritten
+  const flywheelRules = new Set(getFlywheelRules());
+
   try {
-    // Create symlink (use absolute path for reliability)
-    await fs.symlink(sourceClaudeDir, targetClaudeDir, 'dir');
+    // Create target .claude directory
+    await fs.mkdir(targetClaudeDir, { recursive: true });
+
+    // Process settings.json
+    const settingsPath = path.join(sourceClaudeDir, 'settings.json');
+    const settings = await readClaudeSettingsFile(settingsPath);
+    if (settings) {
+      if (settings.permissions?.allow) {
+        settings.permissions.allow = rewritePermissionsForWorktree(
+          settings.permissions.allow,
+          projectPath,
+          worktreePath,
+          flywheelRules
+        );
+      }
+      if (settings.permissions?.deny) {
+        settings.permissions.deny = rewritePermissionsForWorktree(
+          settings.permissions.deny,
+          projectPath,
+          worktreePath,
+          flywheelRules
+        );
+      }
+      await writeClaudeSettingsFile(path.join(targetClaudeDir, 'settings.json'), settings);
+    }
+
+    // Process settings.local.json (if exists)
+    const localSettingsPath = path.join(sourceClaudeDir, 'settings.local.json');
+    const localSettings = await readClaudeSettingsFile(localSettingsPath);
+    if (localSettings) {
+      if (localSettings.permissions?.allow) {
+        localSettings.permissions.allow = rewritePermissionsForWorktree(
+          localSettings.permissions.allow,
+          projectPath,
+          worktreePath,
+          flywheelRules
+        );
+      }
+      if (localSettings.permissions?.deny) {
+        localSettings.permissions.deny = rewritePermissionsForWorktree(
+          localSettings.permissions.deny,
+          projectPath,
+          worktreePath,
+          flywheelRules
+        );
+      }
+      await writeClaudeSettingsFile(
+        path.join(targetClaudeDir, 'settings.local.json'),
+        localSettings
+      );
+    }
   } catch {
-    // Symlink failed - don't fail the worktree creation
+    // Copy failed - don't fail the worktree creation
     // This could happen due to permissions or other issues
   }
 }
@@ -99,8 +243,8 @@ export async function createWorktree(projectPath: string, workItemId: string): P
       timeout: 30000,
     });
 
-    // Symlink Claude Code settings from parent project
-    await symlinkClaudeSettings(projectPath, worktreePath);
+    // Copy Claude Code settings from parent project with path rewriting
+    await copyClaudeSettingsForWorktree(projectPath, worktreePath);
 
     return { success: true, worktreePath, branchName };
   } catch (error) {
