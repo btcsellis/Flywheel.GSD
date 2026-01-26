@@ -4,7 +4,7 @@
 - id: permissions-show-all-existing-804
 - project: personal/flywheel-gsd
 - created: 2026-01-26
-- status: planned
+- status: done
 - tmux-session: flywheel-gsd
 - workflow: worktree
 - assigned-session:
@@ -29,13 +29,13 @@ Update the permissions management system to display all permissions that exist i
 
 ## Success Criteria
 
-- [ ] New section in dashboard shows all individual permission rules (not just categories)
-- [ ] Each rule displays: parsed format (tool + pattern), raw string, source (global/project)
-- [ ] Rules defined at global level are not duplicated at project level
-- [ ] Override rules (same tool, different pattern) are shown with indicator
-- [ ] Custom/untracked rules (not part of any category) are clearly marked
-- [ ] All tests pass
-- [ ] No type errors
+- [x] New section in dashboard shows all individual permission rules (not just categories)
+- [x] Each rule displays: parsed format (tool + pattern), raw string, source (global/project)
+- [x] Rules defined at global level are not duplicated at project level
+- [x] Override rules (same tool, different pattern) are shown with indicator
+- [x] Custom/untracked rules (not part of any category) are clearly marked
+- [x] All tests pass
+- [x] No type errors
 
 ## Notes
 
@@ -161,3 +161,11 @@ This is a prerequisite for the permission collection hook work item - we need to
 - 2026-01-26T14:10:00Z Work item created
 - 2026-01-26 Goals defined after clarifying hierarchy and override behavior
 - 2026-01-26 Implementation plan created
+- 2026-01-26 08:55 Phase 1-4 complete: Added types, parsing, API endpoint, and UI component
+- 2026-01-26 09:00 Build passes, lint passes (0 errors, 6 pre-existing warnings)
+- 2026-01-26 09:02 API verification: /api/permissions/rules returns correct data with parsing, deduplication, override detection, and custom rule marking
+- 2026-01-26 09:05 All success criteria verified
+- 2026-01-26 09:05 Ready for /flywheel-done
+- 2026-01-26 09:10 Committed and pushed (1ec38a5)
+- 2026-01-26 09:10 PR created: https://github.com/btcsellis/Flywheel.GSD/pull/7
+- 2026-01-26 09:10 Work item completed
