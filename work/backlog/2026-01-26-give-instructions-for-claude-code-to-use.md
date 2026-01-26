@@ -5,6 +5,8 @@
 - project: personal/flywheel-gsd
 - created: 2026-01-26
 - status: new
+- workflow: worktree
+- tmux-session: flywheel-flywheel-gsd-give-instructions-for-claude-code-to-use-660
 - assigned-session:
 
 ## Description

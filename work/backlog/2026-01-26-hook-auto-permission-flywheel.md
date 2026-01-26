@@ -5,6 +5,8 @@
 - project: personal/flywheel-gsd
 - created: 2026-01-26
 - status: new
+- workflow: worktree
+- tmux-session: flywheel-flywheel-gsd-hook-auto-permission-flywheel-802
 - assigned-session:
 
 ## Description

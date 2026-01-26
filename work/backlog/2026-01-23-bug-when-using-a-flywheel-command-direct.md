@@ -5,6 +5,8 @@
 - project: personal/flywheel-gsd
 - created: 2026-01-23
 - status: new
+- workflow: worktree
+- tmux-session: flywheel-flywheel-gsd-bug-when-using-a-flywheel-command-direct-570
 - assigned-session:
 
 ## Description
