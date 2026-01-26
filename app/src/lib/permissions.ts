@@ -484,3 +484,122 @@ export function computeRuleDisplayList(
 
   return result;
 }
+
+// ============================================================================
+// Rule-based API functions (for granular permission management)
+// ============================================================================
+
+/**
+ * Get all known rules from all categories (deduplicated)
+ */
+export function getAllKnownRules(): string[] {
+  const rules = new Set<string>();
+  for (const category of PERMISSION_CATEGORIES) {
+    for (const rule of category.rules) {
+      rules.add(rule);
+    }
+  }
+  return Array.from(rules);
+}
+
+/**
+ * Read raw rules from global settings (not converted to categories)
+ */
+export async function readGlobalRawRules(): Promise<string[]> {
+  const settings = await readSettingsFile(GLOBAL_SETTINGS_PATH);
+  return settings?.permissions?.allow || [];
+}
+
+/**
+ * Read raw rules from project settings (not converted to categories)
+ */
+export async function readProjectRawRules(projectPath: string): Promise<string[]> {
+  const settingsPath = getProjectSettingsPath(projectPath);
+  const settings = await readSettingsFile(settingsPath);
+  return settings?.permissions?.allow || [];
+}
+
+/**
+ * Toggle a single rule in global settings
+ */
+export async function writeGlobalRule(rule: string, enabled: boolean): Promise<void> {
+  const existingSettings = (await readSettingsFile(GLOBAL_SETTINGS_PATH)) || {};
+  const currentRules = existingSettings.permissions?.allow || [];
+
+  let newRules: string[];
+  if (enabled) {
+    // Add rule if not present
+    newRules = currentRules.includes(rule) ? currentRules : [...currentRules, rule];
+  } else {
+    // Remove rule
+    newRules = currentRules.filter((r) => r !== rule);
+  }
+
+  const newSettings: ClaudeSettings = {
+    ...existingSettings,
+    permissions: {
+      ...existingSettings.permissions,
+      allow: newRules,
+    },
+  };
+
+  // Remove empty allow array
+  if (newSettings.permissions?.allow?.length === 0) {
+    delete newSettings.permissions.allow;
+  }
+
+  // Remove empty permissions object
+  if (
+    newSettings.permissions &&
+    Object.keys(newSettings.permissions).length === 0
+  ) {
+    delete newSettings.permissions;
+  }
+
+  await writeSettingsFile(GLOBAL_SETTINGS_PATH, newSettings);
+}
+
+/**
+ * Toggle a single rule in project settings
+ */
+export async function writeProjectRule(
+  projectPath: string,
+  rule: string,
+  enabled: boolean
+): Promise<void> {
+  const settingsPath = getProjectSettingsPath(projectPath);
+  const existingSettings = (await readSettingsFile(settingsPath)) || {};
+  const currentRules = existingSettings.permissions?.allow || [];
+
+  let newRules: string[];
+  if (enabled) {
+    // Add rule if not present
+    newRules = currentRules.includes(rule) ? currentRules : [...currentRules, rule];
+  } else {
+    // Remove rule
+    newRules = currentRules.filter((r) => r !== rule);
+  }
+
+  const newSettings: ClaudeSettings = {
+    ...existingSettings,
+    permissions: {
+      ...existingSettings.permissions,
+      allow: newRules,
+    },
+  };
+
+  // Remove empty allow array
+  if (newSettings.permissions?.allow?.length === 0) {
+    delete newSettings.permissions.allow;
+  }
+
+  // Remove empty permissions object
+  if (
+    newSettings.permissions &&
+    Object.keys(newSettings.permissions).length === 0
+  ) {
+    delete newSettings.permissions;
+  }
+
+  await writeSettingsFile(settingsPath, newSettings);
+}
