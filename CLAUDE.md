@@ -78,6 +78,7 @@ Use these commands from any project workspace:
 - `/flywheel-plan` - Create implementation plan for a `defined` work item
 - `/flywheel-execute` - Execute current work item's plan
 - `/flywheel-done` - Complete work item, commit, push, create PR
+- `/flywheel-merge` - Merge all open PRs, sync local main, clean up artifacts
 
 ## Creating Work Items
 
