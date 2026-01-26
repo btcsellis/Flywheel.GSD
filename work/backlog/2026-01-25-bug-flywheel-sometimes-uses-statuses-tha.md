@@ -5,14 +5,13 @@
 - project: personal/flywheel-gsd
 - created: 2026-01-25
 - status: new
-- assigned-session:
+- assigned-session: 
 
 ## Description
 
-I'm not sure exactly how to reproduce, but I think maybe when I did /flywheel-execute it put the work item into an executing status, which we no longer do.
+I'm not sure exactly how to reproduce, but I think maybe when I did /flywheel-execute it put the work item into an executing status, which we no longer do. Let's make sure all commands use the correct status. Let's also make it so that if there's a work item with an incorrect status, the dashboard still works. currently it fails to load.
 
 ## Success Criteria
-
 
 
 ## Execution Log
