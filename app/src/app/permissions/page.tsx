@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Check, Minus, Loader2 } from 'lucide-react';
+import { Check, Minus, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RulesList } from './components/rules-list';
 
 interface PermissionCategory {
   id: string;
@@ -20,6 +21,28 @@ interface ProjectPermissionState {
 interface AllPermissionsState {
   global: string[];
   projects: ProjectPermissionState[];
+}
+
+interface ParsedRule {
+  tool: string;
+  pattern: string | null;
+  raw: string;
+}
+
+interface RuleWithSource {
+  rule: ParsedRule;
+  source: 'global' | 'project';
+  isOverride: boolean;
+  isCustom: boolean;
+}
+
+interface RulesApiResponse {
+  globalRules: RuleWithSource[];
+  projectRules: Record<string, {
+    projectName: string;
+    area: string;
+    rules: RuleWithSource[];
+  }>;
 }
 
 const PERMISSION_CATEGORIES: PermissionCategory[] = [
@@ -80,17 +103,25 @@ function Checkbox({
 
 export default function PermissionsPage() {
   const [permissions, setPermissions] = useState<AllPermissionsState | null>(null);
+  const [rulesData, setRulesData] = useState<RulesApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rulesExpanded, setRulesExpanded] = useState(true);
 
   useEffect(() => {
     async function fetchPermissions() {
       try {
-        const res = await fetch('/api/permissions');
-        if (!res.ok) throw new Error('Failed to fetch permissions');
-        const data = await res.json();
-        setPermissions(data);
+        const [permRes, rulesRes] = await Promise.all([
+          fetch('/api/permissions'),
+          fetch('/api/permissions/rules'),
+        ]);
+        if (!permRes.ok) throw new Error('Failed to fetch permissions');
+        if (!rulesRes.ok) throw new Error('Failed to fetch rules');
+        const permData = await permRes.json();
+        const rulesDataJson = await rulesRes.json();
+        setPermissions(permData);
+        setRulesData(rulesDataJson);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load permissions');
       } finally {
@@ -392,6 +423,93 @@ export default function PermissionsPage() {
           </table>
         </div>
       </div>
+
+      {/* All Rules Section */}
+      {rulesData && (
+        <div className="border border-zinc-800 rounded-lg">
+          <button
+            type="button"
+            onClick={() => setRulesExpanded(!rulesExpanded)}
+            className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-800/30 transition-colors"
+          >
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-100">
+                All Permission Rules
+              </h2>
+              <p className="text-sm text-zinc-500 mt-0.5">
+                Individual rules from settings files (including custom rules not in categories)
+              </p>
+            </div>
+            {rulesExpanded ? (
+              <ChevronDown className="h-5 w-5 text-zinc-500" />
+            ) : (
+              <ChevronRight className="h-5 w-5 text-zinc-500" />
+            )}
+          </button>
+
+          {rulesExpanded && (
+            <div className="p-4 pt-0 space-y-6">
+              {/* Global Rules */}
+              <div>
+                <h3 className="text-sm font-medium text-zinc-300 mb-2">
+                  Global Rules
+                  <span className="text-zinc-500 font-normal ml-2">
+                    (~/.claude/settings.json)
+                  </span>
+                </h3>
+                <RulesList
+                  rules={rulesData.globalRules}
+                  showSource={false}
+                  emptyMessage="No global rules defined"
+                />
+              </div>
+
+              {/* Project Rules by Area */}
+              {Object.entries(
+                Object.entries(rulesData.projectRules).reduce(
+                  (acc, [path, info]) => {
+                    const area = info.area;
+                    if (!acc[area]) acc[area] = [];
+                    acc[area].push({ path, ...info });
+                    return acc;
+                  },
+                  {} as Record<string, Array<{ path: string; projectName: string; area: string; rules: RuleWithSource[] }>>
+                )
+              ).map(([area, projects]) => {
+                const hasRules = projects.some((p) => p.rules.length > 0);
+                if (!hasRules) return null;
+
+                return (
+                  <div key={area}>
+                    <h3
+                      className="text-sm font-medium mb-2"
+                      style={{ color: AREA_COLORS[area] || '#a1a1aa' }}
+                    >
+                      {area.charAt(0).toUpperCase() + area.slice(1)} Projects
+                    </h3>
+                    <div className="space-y-3">
+                      {projects
+                        .filter((p) => p.rules.length > 0)
+                        .map((project) => (
+                          <div key={project.path} className="ml-2">
+                            <h4 className="text-xs font-medium text-zinc-400 mb-1">
+                              {project.projectName}
+                            </h4>
+                            <RulesList
+                              rules={project.rules}
+                              showSource={false}
+                              emptyMessage=""
+                            />
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
