@@ -73,19 +73,33 @@ Items can also be **Blocked** at any stage if stuck.
 
 Use these commands from any project workspace:
 
-- `/flywheel-start` - Initialize session, pick up work item
-- `/flywheel-plan` - Create new work item from conversation
+- `/flywheel-new` - Create a new work item (minimal: title, project, priority, description)
+- `/flywheel-define` - Define success criteria for a `new` work item
+- `/flywheel-plan` - Create implementation plan for a `defined` work item
 - `/flywheel-execute` - Execute current work item's plan
-- `/flywheel-ship` - Commit, push, create PR, complete work item
-- `/flywheel-cleanup` - Clean up after completion
+- `/flywheel-done` - Complete work item, commit, push, create PR
+
+## Creating Work Items
+
+**IMPORTANT:** When asked to create a new work item, always use `/flywheel-new`.
+
+Do NOT manually create work item files or add fields like `workflow`, `tmux-session`, `assigned-session`, or success criteria. These are set by later commands in the workflow.
+
+`/flywheel-new` collects only:
+- Title
+- Project
+- Priority
+- Brief description
+
+Then run `/flywheel-define` → `/flywheel-plan` → `/flywheel-execute` → `/flywheel-done`.
 
 ## Workflow
 
 ### Creating Work
 
-1. From any project, run `/flywheel-plan`
-2. Describe the work through conversation
-3. Work item created in `flywheel-gsd/work/backlog/`
+1. From any project, run `/flywheel-new`
+2. Provide title, project, priority, and brief description
+3. Work item created in `flywheel-gsd/work/backlog/` with status `new`
 
 ### Picking Up Work
 
