@@ -29,6 +29,25 @@ export interface AllPermissionsState {
   projects: ProjectPermissionState[];
 }
 
+// Types for individual rule display
+export interface ParsedRule {
+  tool: string;
+  pattern: string | null;
+  raw: string;
+}
+
+export interface RuleWithSource {
+  rule: ParsedRule;
+  source: 'global' | 'project';
+  isOverride: boolean;
+  isCustom: boolean;
+}
+
+export interface AllRulesState {
+  globalRules: string[];
+  projectRules: Map<string, string[]>;
+}
+
 export const PERMISSION_CATEGORIES: PermissionCategory[] = [
   // File Operations
   {
@@ -70,12 +89,15 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     rules: [
       'Bash(git add:*)',
       'Bash(git commit:*)',
+      'Bash(git push)',
       'Bash(git push:*)',
       'Bash(git checkout:*)',
       'Bash(git switch:*)',
       'Bash(git merge:*)',
       'Bash(git rebase:*)',
       'Bash(git stash:*)',
+      'Bash(git worktree:*)',
+      'Bash(git branch:*)',
     ],
   },
   // Build & Test
@@ -144,6 +166,21 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'Bash(go get:*)',
     ],
   },
+  // Terminal
+  {
+    id: 'tmux',
+    label: 'Tmux commands',
+    description: 'tmux session management',
+    rules: [
+      'Bash(tmux:*)',
+      'Bash(tmux list-sessions:*)',
+      'Bash(tmux new-session:*)',
+      'Bash(tmux attach:*)',
+      'Bash(tmux kill-session:*)',
+      'Bash(tmux send-keys:*)',
+      'Bash(tmux has-session:*)',
+    ],
+  },
   // Other
   {
     id: 'mcp-tools',
@@ -156,6 +193,31 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     label: 'Web fetches',
     description: 'Fetch URLs and web search',
     rules: ['WebFetch', 'WebSearch'],
+  },
+  // Flywheel
+  {
+    id: 'flywheel',
+    label: 'Flywheel commands',
+    description: '/flywheel-define, plan, execute, done',
+    rules: [
+      'Skill(flywheel-define)',
+      'Skill(flywheel-plan)',
+      'Skill(flywheel-execute)',
+      'Skill(flywheel-done)',
+      'Skill(flywheel-new)',
+      'Read(~/personal/flywheel-gsd/**)',
+      'Edit(~/personal/flywheel-gsd/work/**)',
+      'Read(~/.claude/**)',
+      'Read(.claude/**)',
+      'Bash(ls ~/.claude/*)',
+      'Bash(ls .claude/*)',
+      'Bash(mv ~/personal/flywheel-gsd/work/*)',
+      'Bash(rm *-worktrees/*)',
+      'Bash(/bin/rm *-worktrees/*)',
+      'Bash(cd ~/personal/flywheel-gsd*)',
+      'Bash(ls *-worktrees/*)',
+      'Bash(/bin/ls *-worktrees/*)',
+    ],
   },
 ];
 
@@ -313,4 +375,112 @@ export async function writeGlobalPermissions(categoryIds: string[]): Promise<voi
   }
 
   await writeSettingsFile(GLOBAL_SETTINGS_PATH, newSettings);
+}
+
+/**
+ * Parse a rule string into its components
+ * Handles formats: "Tool", "Tool(pattern)", "Tool(pattern:*)", "mcp__*"
+ */
+export function parseRule(raw: string): ParsedRule {
+  // Match "Tool(pattern)" format
+  const match = raw.match(/^([A-Za-z_][A-Za-z0-9_]*)\((.+)\)$/);
+  if (match) {
+    return {
+      tool: match[1],
+      pattern: match[2],
+      raw,
+    };
+  }
+
+  // Plain tool name (no pattern)
+  return {
+    tool: raw,
+    pattern: null,
+    raw,
+  };
+}
+
+/**
+ * Check if a rule matches any category
+ * Returns the category ID if found, null otherwise
+ */
+export function isRuleInCategory(rule: string): string | null {
+  for (const category of PERMISSION_CATEGORIES) {
+    if (category.rules.includes(rule)) {
+      return category.id;
+    }
+  }
+  return null;
+}
+
+/**
+ * Read all raw permission rules from settings files
+ */
+export async function readAllRawRules(projectPaths: string[]): Promise<{
+  globalRules: string[];
+  projectRules: Record<string, string[]>;
+}> {
+  const globalSettings = await readSettingsFile(GLOBAL_SETTINGS_PATH);
+  const globalRules = globalSettings?.permissions?.allow || [];
+
+  const projectRules: Record<string, string[]> = {};
+  for (const projectPath of projectPaths) {
+    const settingsPath = getProjectSettingsPath(projectPath);
+    const settings = await readSettingsFile(settingsPath);
+    projectRules[projectPath] = settings?.permissions?.allow || [];
+  }
+
+  return { globalRules, projectRules };
+}
+
+/**
+ * Compute the display list of rules with source info, deduplication, and override detection
+ */
+export function computeRuleDisplayList(
+  globalRules: string[],
+  projectRules: string[]
+): RuleWithSource[] {
+  const result: RuleWithSource[] = [];
+  const globalRulesSet = new Set(globalRules);
+
+  // Build a map of tool -> pattern for global rules (for override detection)
+  const globalToolPatterns = new Map<string, string | null>();
+  for (const rule of globalRules) {
+    const parsed = parseRule(rule);
+    globalToolPatterns.set(parsed.tool, parsed.pattern);
+  }
+
+  // Add global rules
+  for (const rule of globalRules) {
+    const parsed = parseRule(rule);
+    result.push({
+      rule: parsed,
+      source: 'global',
+      isOverride: false,
+      isCustom: isRuleInCategory(rule) === null,
+    });
+  }
+
+  // Add project rules (with deduplication and override detection)
+  for (const rule of projectRules) {
+    // Skip if exact same rule exists at global level (deduplication)
+    if (globalRulesSet.has(rule)) {
+      continue;
+    }
+
+    const parsed = parseRule(rule);
+
+    // Check if this is an override (same tool but different pattern)
+    const globalPattern = globalToolPatterns.get(parsed.tool);
+    const isOverride = globalPattern !== undefined && globalPattern !== parsed.pattern;
+
+    result.push({
+      rule: parsed,
+      source: 'project',
+      isOverride,
+      isCustom: isRuleInCategory(rule) === null,
+    });
+  }
+
+  return result;
 }

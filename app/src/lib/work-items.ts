@@ -6,8 +6,7 @@ import { getProjectPathFromIdentifier } from './projects';
 export type WorkItemStatus =
   | 'new'        // New, needs definition
   | 'defined'    // Defined with success criteria, ready to plan
-  | 'planned'    // Plan created, ready to execute
-  | 'executing'  // Actively being worked on
+  | 'planned'    // Plan created, ready to execute (stays here during execution with gradient animation)
   | 'review'     // For review - awaiting human approval
   | 'done'       // Approved, shipped, cleaned up
   | 'blocked';   // Stuck, needs intervention
@@ -346,7 +345,6 @@ export function getStatusColor(status: WorkItemStatus): string {
     case 'new': return 'bg-zinc-500';
     case 'defined': return 'bg-blue-500';
     case 'planned': return 'bg-indigo-500';
-    case 'executing': return 'bg-purple-500';
     case 'review': return 'bg-yellow-500';
     case 'done': return 'bg-green-500';
     case 'blocked': return 'bg-red-500';

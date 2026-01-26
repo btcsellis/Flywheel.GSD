@@ -17,7 +17,6 @@ interface LaunchButtonProps {
 export function LaunchButton({ folder, filename, status, existingWorkflow, itemId, onLaunch, compact = false }: LaunchButtonProps) {
   const [launching, setLaunching] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [workflowStep, setWorkflowStep] = useState<'workflow' | 'session' | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowType | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ top?: number; bottom?: number; right?: number; left?: number }>({});
   const menuRef = useRef<HTMLDivElement>(null);
@@ -27,7 +26,6 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuOpen(false);
-        setWorkflowStep(null);
         setSelectedWorkflow(null);
       }
     }
@@ -40,7 +38,6 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const dropdownHeight = 200; // Approximate height of dropdown menu
-      const dropdownWidth = 256; // w-64 = 16rem = 256px
       const spaceBelow = window.innerHeight - rect.bottom;
       const openUpward = spaceBelow < dropdownHeight;
 
@@ -58,25 +55,18 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
     }
 
     setMenuOpen(true);
-    // For new items without workflow, show workflow selection first
-    // For items that already have a workflow, go straight to session selection
-    if (status === 'new' && !existingWorkflow) {
-      setWorkflowStep('workflow');
-    } else {
-      setWorkflowStep('session');
-      setSelectedWorkflow(existingWorkflow || null);
-    }
   };
 
   const handleSelectWorkflow = (workflow: WorkflowType) => {
     setSelectedWorkflow(workflow);
-    setWorkflowStep('session');
+    // Launch immediately after selecting workflow - no session selection needed
+    handleLaunch(workflow);
   };
 
-  const handleLaunch = async (reuseSession: boolean) => {
+  const handleLaunch = async (workflowOverride?: WorkflowType) => {
+    const workflowToUse = workflowOverride || selectedWorkflow || existingWorkflow;
     setLaunching(true);
     setMenuOpen(false);
-    setWorkflowStep(null);
     try {
       const res = await fetch('/api/launch-claude', {
         method: 'POST',
@@ -84,8 +74,7 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
         body: JSON.stringify({
           folder,
           filename,
-          reuseSession,
-          workflow: selectedWorkflow,
+          workflow: workflowToUse,
         }),
       });
       const data = await res.json();
@@ -131,9 +120,12 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
           e.stopPropagation();
           if (menuOpen) {
             setMenuOpen(false);
-            setWorkflowStep(null);
             setSelectedWorkflow(null);
+          } else if (existingWorkflow || status !== 'new') {
+            // Workflow already set or not a new item - launch directly
+            handleLaunch();
           } else {
+            // New item without workflow - show workflow selection menu
             handleOpenMenu();
           }
         }}
@@ -159,63 +151,25 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
             {actionLabel}
           </div>
 
-          {workflowStep === 'workflow' && (
-            <>
-              <div className="px-3 py-2 text-xs text-zinc-500 border-b border-zinc-700/50">
-                Choose workflow type:
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleSelectWorkflow('main'); }}
-                className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors"
-              >
-                <div className="text-sm text-zinc-300">Main Branch</div>
-                <div className="text-xs text-zinc-500">Work directly on main, commit & sync</div>
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleSelectWorkflow('worktree'); }}
-                className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors border-t border-zinc-700/50"
-              >
-                <div className="text-sm text-zinc-300">New Worktree</div>
-                <div className="text-xs text-zinc-500">Isolated branch, creates PR on ship</div>
-              </button>
-            </>
-          )}
-
-          {workflowStep === 'session' && (
-            <>
-              {selectedWorkflow && (
-                <div className="px-3 py-1.5 text-xs text-zinc-500 border-b border-zinc-700/50 flex items-center gap-2">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase ${
-                    selectedWorkflow === 'main' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'
-                  }`}>
-                    {selectedWorkflow}
-                  </span>
-                  {status === 'new' && !existingWorkflow && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setWorkflowStep('workflow'); }}
-                      className="text-zinc-500 hover:text-zinc-300 underline"
-                    >
-                      change
-                    </button>
-                  )}
-                </div>
-              )}
-              <button
-                onClick={(e) => { e.stopPropagation(); handleLaunch(false); }}
-                disabled={launching}
-                className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
-              >
-                New session
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleLaunch(true); }}
-                disabled={launching}
-                className="w-full px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50 border-t border-zinc-700/50"
-              >
-                Existing session
-              </button>
-            </>
-          )}
+          <div className="px-3 py-2 text-xs text-zinc-500 border-b border-zinc-700/50">
+            Choose workflow type:
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleSelectWorkflow('main'); }}
+            disabled={launching}
+            className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors disabled:opacity-50"
+          >
+            <div className="text-sm text-zinc-300">Main Branch</div>
+            <div className="text-xs text-zinc-500">Work directly on main, commit & sync</div>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleSelectWorkflow('worktree'); }}
+            disabled={launching}
+            className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors border-t border-zinc-700/50 disabled:opacity-50"
+          >
+            <div className="text-sm text-zinc-300">New Worktree</div>
+            <div className="text-xs text-zinc-500">Isolated branch, creates PR on ship</div>
+          </button>
         </div>
       )}
     </div>

@@ -162,7 +162,7 @@ export function generateTmuxSessionName(
   }
 }
 
-async function tmuxSessionExists(sessionName: string): Promise<boolean> {
+export async function tmuxSessionExists(sessionName: string): Promise<boolean> {
   try {
     await execAsync(`tmux has-session -t "${sessionName}" 2>/dev/null`);
     return true;
