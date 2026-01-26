@@ -33,6 +33,42 @@ export interface WorktreeResult {
 }
 
 /**
+ * Symlink the parent project's .claude directory to the worktree.
+ * This allows the worktree to inherit Claude Code permissions from the parent.
+ * - If parent has no .claude directory, silently skips (no error)
+ * - If worktree already has .claude, doesn't overwrite
+ */
+async function symlinkClaudeSettings(projectPath: string, worktreePath: string): Promise<void> {
+  const sourceClaudeDir = path.join(projectPath, '.claude');
+  const targetClaudeDir = path.join(worktreePath, '.claude');
+
+  try {
+    // Check if source .claude directory exists
+    await fs.access(sourceClaudeDir);
+  } catch {
+    // Parent has no .claude directory, nothing to symlink
+    return;
+  }
+
+  try {
+    // Check if target already has .claude (don't overwrite)
+    await fs.access(targetClaudeDir);
+    // Target exists, don't overwrite
+    return;
+  } catch {
+    // Target doesn't exist, proceed with symlink
+  }
+
+  try {
+    // Create symlink (use absolute path for reliability)
+    await fs.symlink(sourceClaudeDir, targetClaudeDir, 'dir');
+  } catch {
+    // Symlink failed - don't fail the worktree creation
+    // This could happen due to permissions or other issues
+  }
+}
+
+/**
  * Create a git worktree for isolated work on a feature/work item.
  * Worktree is created at ../{repo-name}-worktrees/{workItemId}/
  * Branch is created with name {workItemId}
@@ -63,19 +99,8 @@ export async function createWorktree(projectPath: string, workItemId: string): P
       timeout: 30000,
     });
 
-    // Copy .claude/settings.json from main project if it exists
-    // This preserves Claude Code permissions in the worktree
-    const sourceSettings = path.join(projectPath, '.claude', 'settings.json');
-    const targetClaudeDir = path.join(worktreePath, '.claude');
-    const targetSettings = path.join(targetClaudeDir, 'settings.json');
-
-    try {
-      await fs.access(sourceSettings);
-      await fs.mkdir(targetClaudeDir, { recursive: true });
-      await fs.copyFile(sourceSettings, targetSettings);
-    } catch {
-      // Source settings don't exist or copy failed - that's fine, continue without
-    }
+    // Symlink Claude Code settings from parent project
+    await symlinkClaudeSettings(projectPath, worktreePath);
 
     return { success: true, worktreePath, branchName };
   } catch (error) {
