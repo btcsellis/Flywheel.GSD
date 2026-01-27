@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProjectRulesState {
@@ -16,6 +16,7 @@ interface UnifiedPermissionsState {
   globalEnabled: string[];
   areaEnabled: Record<string, string[]>;
   projects: ProjectRulesState[];
+  drift: Record<string, string[]>;
 }
 
 const AREA_COLORS: Record<string, string> = {
@@ -93,6 +94,7 @@ export default function PermissionsPage() {
   const [permissions, setPermissions] = useState<UnifiedPermissionsState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -122,8 +124,28 @@ export default function PermissionsPage() {
         ? [...permissions.globalEnabled, rule]
         : permissions.globalEnabled.filter((r) => r !== rule);
 
-      // Optimistic update
-      setPermissions((prev) => (prev ? { ...prev, globalEnabled: newGlobalEnabled } : prev));
+      // Optimistic update: update global AND all area rules (backend writes to all 4 locations)
+      setPermissions((prev) => {
+        if (!prev) return prev;
+        const newAreaEnabled = { ...prev.areaEnabled };
+        for (const area of AREA_ORDER) {
+          const current = newAreaEnabled[area] || [];
+          if (enabled) {
+            newAreaEnabled[area] = current.includes(rule) ? current : [...current, rule];
+          } else {
+            newAreaEnabled[area] = current.filter((r) => r !== rule);
+          }
+        }
+        // Clear drift for this rule since we're syncing
+        const newDrift = { ...prev.drift };
+        for (const area of AREA_ORDER) {
+          if (newDrift[area]) {
+            newDrift[area] = newDrift[area].filter((r) => r !== rule);
+            if (newDrift[area].length === 0) delete newDrift[area];
+          }
+        }
+        return { ...prev, globalEnabled: newGlobalEnabled, areaEnabled: newAreaEnabled, drift: newDrift };
+      });
 
       try {
         const res = await fetch('/api/permissions/rule', {
@@ -134,7 +156,7 @@ export default function PermissionsPage() {
 
         if (!res.ok) throw new Error('Failed to save');
       } catch {
-        // Rollback on error
+        // Rollback on error — refetch to get accurate state
         setPermissions((prev) =>
           prev
             ? {
@@ -252,6 +274,23 @@ export default function PermissionsPage() {
     [permissions]
   );
 
+  const syncGlobalToAreas = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/permissions/sync', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to sync');
+      // Refetch permissions to get updated state
+      const permRes = await fetch('/api/permissions');
+      if (permRes.ok) {
+        setPermissions(await permRes.json());
+      }
+    } catch {
+      setError('Failed to sync permissions');
+    } finally {
+      setSyncing(false);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -289,6 +328,13 @@ export default function PermissionsPage() {
     areaEnabledSets[area] = new Set(rules);
   }
 
+  // Drift detection: global rules missing from areas
+  const driftSets: Record<string, Set<string>> = {};
+  const totalDriftCount = Object.entries(permissions.drift || {}).reduce((count, [area, rules]) => {
+    driftSets[area] = new Set(rules);
+    return count + rules.length;
+  }, 0);
+
   return (
     <div className="space-y-6">
       <div>
@@ -299,6 +345,25 @@ export default function PermissionsPage() {
           Global permissions apply to all projects.
         </p>
       </div>
+
+      {/* Drift Warning Banner */}
+      {totalDriftCount > 0 && (
+        <div className="flex items-center justify-between gap-3 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
+          <div className="flex items-center gap-2 text-sm text-amber-400">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>
+              {totalDriftCount} global permission{totalDriftCount !== 1 ? 's' : ''} missing from area settings
+            </span>
+          </div>
+          <button
+            onClick={syncGlobalToAreas}
+            disabled={syncing}
+            className="px-3 py-1.5 text-xs font-medium bg-amber-600 hover:bg-amber-500 text-white rounded transition-colors disabled:opacity-50"
+          >
+            {syncing ? 'Syncing...' : 'Sync All'}
+          </button>
+        </div>
+      )}
 
       {/* Unified Permissions Table */}
       <div className="border border-zinc-800 rounded-lg overflow-hidden">
@@ -378,19 +443,33 @@ export default function PermissionsPage() {
                       const projects = projectsByArea[area] || [];
                       const isAreaEnabled = areaEnabledSets[area]?.has(rule) ?? false;
                       const isSavingArea = saving === `area:${area}-${rule}`;
+                      const hasDrift = driftSets[area]?.has(rule) ?? false;
 
                       return [
-                        <td key={`area-${area}`} className="p-3 text-center border-l border-zinc-700/50">
-                          <div className="flex justify-center">
+                        <td
+                          key={`area-${area}`}
+                          className={cn(
+                            'p-3 text-center border-l border-zinc-700/50',
+                            hasDrift && 'bg-amber-900/15'
+                          )}
+                        >
+                          <div className="flex justify-center items-center gap-1">
                             {isSavingArea ? (
                               <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
                             ) : (
-                              <Checkbox
-                                checked={isAreaEnabled}
-                                onChange={(checked) => toggleAreaRule(area, rule, checked)}
-                                disabled={isGlobalEnabled}
-                                disabledChecked={isGlobalEnabled}
-                              />
+                              <>
+                                <Checkbox
+                                  checked={isAreaEnabled}
+                                  onChange={(checked) => toggleAreaRule(area, rule, checked)}
+                                  disabled={isGlobalEnabled}
+                                  disabledChecked={isGlobalEnabled}
+                                />
+                                {hasDrift && (
+                                  <span title="Missing from area — set globally but not synced">
+                                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>,

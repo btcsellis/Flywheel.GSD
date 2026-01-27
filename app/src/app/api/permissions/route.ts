@@ -4,6 +4,7 @@ import {
   readGlobalRawRules,
   readAreaRawRules,
   readProjectRawRules,
+  getGlobalDrift,
 } from '@/lib/permissions';
 
 export interface ProjectRulesState {
@@ -18,6 +19,7 @@ export interface UnifiedPermissionsResponse {
   globalEnabled: string[];
   areaEnabled: Record<string, string[]>;
   projects: ProjectRulesState[];
+  drift: Record<string, string[]>;
 }
 
 export async function GET() {
@@ -75,6 +77,8 @@ export async function GET() {
       return 3;
     }
 
+    const drift = await getGlobalDrift();
+
     const result: UnifiedPermissionsResponse = {
       allRules: Array.from(knownRules).sort((a, b) => {
         const tierDiff = ruleTier(a) - ruleTier(b);
@@ -84,6 +88,7 @@ export async function GET() {
       globalEnabled: globalEnabledRules,
       areaEnabled,
       projects,
+      drift,
     };
 
     return NextResponse.json(result);

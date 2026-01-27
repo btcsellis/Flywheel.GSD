@@ -2,6 +2,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 
+export const AREA_VALUES = ['personal', 'bellwether', 'sophia'] as const;
+export type AreaValue = (typeof AREA_VALUES)[number];
+
 export interface PermissionCategory {
   id: string;
   label: string;
@@ -382,6 +385,51 @@ export async function writeGlobalPermissions(categoryIds: string[]): Promise<voi
   }
 
   await writeSettingsFile(GLOBAL_SETTINGS_PATH, newSettings);
+
+  // Sync global rules to all area settings files.
+  // For each area: ensure all global rules are present, remove global rules
+  // that were disabled, but preserve area-specific rules.
+  const globalRulesSet = new Set(rules);
+  const previousGlobalRules = new Set(existingSettings.permissions?.allow || []);
+
+  await Promise.all(
+    AREA_VALUES.map(async (area) => {
+      const areaSettingsPath = getAreaSettingsPath(area);
+      const areaSettings = (await readSettingsFile(areaSettingsPath)) || {};
+      const areaRules = areaSettings.permissions?.allow || [];
+
+      // Remove global rules that were disabled (were in previous global but not in new)
+      const removedGlobalRules = [...previousGlobalRules].filter((r) => !globalRulesSet.has(r));
+      let updatedRules = areaRules.filter((r) => !removedGlobalRules.includes(r));
+
+      // Add new global rules that aren't already present
+      for (const rule of rules) {
+        if (!updatedRules.includes(rule)) {
+          updatedRules.push(rule);
+        }
+      }
+
+      const updatedSettings: ClaudeSettings = {
+        ...areaSettings,
+        permissions: {
+          ...areaSettings.permissions,
+          allow: updatedRules,
+        },
+      };
+
+      if (updatedSettings.permissions?.allow?.length === 0) {
+        delete updatedSettings.permissions.allow;
+      }
+      if (
+        updatedSettings.permissions &&
+        Object.keys(updatedSettings.permissions).length === 0
+      ) {
+        delete updatedSettings.permissions;
+      }
+
+      await writeSettingsFile(areaSettingsPath, updatedSettings);
+    })
+  );
 }
 
 /**
@@ -610,6 +658,12 @@ export async function writeGlobalRule(rule: string, enabled: boolean): Promise<v
   }
 
   await writeSettingsFile(GLOBAL_SETTINGS_PATH, newSettings);
+
+  // Also write to all area settings files so the rule is available
+  // when CLAUDE_CONFIG_DIR overrides ~/.claude/
+  await Promise.all(
+    AREA_VALUES.map((area) => writeAreaRule(area, rule, enabled))
+  );
 }
 
 /**
@@ -665,5 +719,56 @@ export async function writeProjectRule(
 export function getFlywheelRules(): string[] {
   const flywheelCategory = PERMISSION_CATEGORIES.find((c) => c.id === 'flywheel');
   return flywheelCategory?.rules || [];
+}
+
+/**
+ * Detect global permissions that are missing from area settings files.
+ * Returns a map of area name → array of global rules missing from that area.
+ */
+export async function getGlobalDrift(): Promise<Record<string, string[]>> {
+  const globalRules = await readGlobalRawRules();
+  const globalSet = new Set(globalRules);
+  const drift: Record<string, string[]> = {};
+
+  for (const area of AREA_VALUES) {
+    const areaRules = await readAreaRawRules(area);
+    const areaSet = new Set(areaRules);
+    const missing = [...globalSet].filter((rule) => !areaSet.has(rule));
+    if (missing.length > 0) {
+      drift[area] = missing;
+    }
+  }
+
+  return drift;
+}
+
+/**
+ * Sync all missing global permissions to area settings files.
+ * Adds any global rules that are missing from each area.
+ * Batches writes per area file to avoid race conditions.
+ */
+export async function syncGlobalToAreas(): Promise<void> {
+  const drift = await getGlobalDrift();
+
+  await Promise.all(
+    Object.entries(drift).map(async ([area, missingRules]) => {
+      const settingsPath = getAreaSettingsPath(area);
+      const existingSettings = (await readSettingsFile(settingsPath)) || {};
+      const currentRules = existingSettings.permissions?.allow || [];
+
+      // Add all missing rules at once
+      const newRules = [...currentRules, ...missingRules.filter((r) => !currentRules.includes(r))];
+
+      const newSettings: ClaudeSettings = {
+        ...existingSettings,
+        permissions: {
+          ...existingSettings.permissions,
+          allow: newRules,
+        },
+      };
+
+      await writeSettingsFile(settingsPath, newSettings);
+    })
+  );
 }
 
