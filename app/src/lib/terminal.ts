@@ -213,6 +213,39 @@ async function copyClaudeSettingsForWorktree(
 }
 
 /**
+ * Pre-approve workspace trust for a worktree in ~/.claude.json.
+ * This sets hasTrustDialogAccepted=true so Claude Code doesn't prompt
+ * "Do you trust the files in this folder?" when launching in the worktree.
+ */
+async function preApproveWorktreeTrust(worktreePath: string): Promise<void> {
+  const claudeJsonPath = path.join(os.homedir(), '.claude.json');
+
+  try {
+    let data: Record<string, unknown> = {};
+    try {
+      const content = await fs.readFile(claudeJsonPath, 'utf-8');
+      data = JSON.parse(content) as Record<string, unknown>;
+    } catch {
+      // File doesn't exist or isn't valid JSON — start fresh
+    }
+
+    if (!data.projects || typeof data.projects !== 'object') {
+      data.projects = {};
+    }
+
+    const projects = data.projects as Record<string, Record<string, unknown>>;
+    projects[worktreePath] = {
+      ...projects[worktreePath],
+      hasTrustDialogAccepted: true,
+    };
+
+    await fs.writeFile(claudeJsonPath, JSON.stringify(data, null, 2) + '\n', 'utf-8');
+  } catch {
+    // Don't block worktree creation if trust pre-approval fails
+  }
+}
+
+/**
  * Create a git worktree for isolated work on a feature/work item.
  * Worktree is created at ../{repo-name}-worktrees/{workItemId}/
  * Branch is created with name {workItemId}
@@ -245,6 +278,9 @@ export async function createWorktree(projectPath: string, workItemId: string): P
 
     // Copy Claude Code settings from parent project with path rewriting
     await copyClaudeSettingsForWorktree(projectPath, worktreePath);
+
+    // Pre-approve workspace trust so Claude Code doesn't prompt on launch
+    await preApproveWorktreeTrust(worktreePath);
 
     return { success: true, worktreePath, branchName };
   } catch (error) {
