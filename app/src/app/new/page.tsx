@@ -84,6 +84,7 @@ function NewWorkItemContent() {
   const [customProject, setCustomProject] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [important, setImportant] = useState(false);
+  const [unattended, setUnattended] = useState(false);
   const [description, setDescription] = useState('');
   const [criteria, setCriteria] = useState([{ text: '', completed: false }]);
   const [plan, setPlan] = useState(['']);
@@ -206,6 +207,7 @@ function NewWorkItemContent() {
           project: fullProject,
           dueDate: dueDate || undefined,
           important: important || undefined,
+          unattended: unattended || undefined,
           description,
           successCriteria: validCriteria,
           plan: validPlan.length > 0 ? validPlan : undefined,
@@ -311,7 +313,7 @@ function NewWorkItemContent() {
             />
           </div>
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -321,6 +323,17 @@ function NewWorkItemContent() {
               />
               <span className={`text-sm ${important ? 'text-red-400' : 'text-zinc-400'}`}>
                 Important
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={unattended}
+                onChange={e => setUnattended(e.target.checked)}
+                className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-blue-500 focus:ring-blue-500"
+              />
+              <span className={`text-sm ${unattended ? 'text-blue-400' : 'text-zinc-400'}`}>
+                Run Unattended
               </span>
             </label>
           </div>

@@ -17,7 +17,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, project, dueDate, important, description, successCriteria, plan, verification, context, files, notes } = body;
+    const { title, project, dueDate, important, unattended, description, successCriteria, plan, verification, context, files, notes } = body;
 
     if (!title || !project || !description) {
       return NextResponse.json(
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
       successCriteria: successCriteria || [],
       dueDate,
       important,
+      unattended,
       plan,
       verification,
       context,

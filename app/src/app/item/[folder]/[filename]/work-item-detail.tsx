@@ -32,6 +32,7 @@ interface FormData {
   status: WorkItemStatus;
   dueDate: string;
   important: boolean;
+  unattended: boolean;
   assignedSession: string;
   workflow?: WorkflowType;
   tmuxSession?: string;
@@ -68,6 +69,7 @@ function serializeToMarkdown(data: FormData): string {
   lines.push(`- status: ${data.status}`);
   if (data.dueDate) lines.push(`- due: ${data.dueDate}`);
   if (data.important) lines.push(`- important: true`);
+  if (data.unattended) lines.push(`- unattended: true`);
   if (data.workflow) lines.push(`- workflow: ${data.workflow}`);
   if (data.tmuxSession) lines.push(`- tmux-session: ${data.tmuxSession}`);
   lines.push(`- assigned-session: ${data.assignedSession}`);
@@ -278,6 +280,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
     status: item.metadata.status,
     dueDate: item.metadata.dueDate || '',
     important: item.metadata.important || false,
+    unattended: item.metadata.unattended || false,
     assignedSession: item.metadata.assignedSession || '',
     workflow: item.metadata.workflow,
     tmuxSession: item.metadata.tmuxSession,
@@ -661,7 +664,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             />
           </div>
 
-          <div className="flex items-end">
+          <div className="flex items-end gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -671,6 +674,17 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
               />
               <span className={`text-sm ${formData.important ? 'text-red-400' : 'text-zinc-400'}`}>
                 Important
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.unattended}
+                onChange={e => setFormData({ ...formData, unattended: e.target.checked })}
+                className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-blue-500 focus:ring-blue-500"
+              />
+              <span className={`text-sm ${formData.unattended ? 'text-blue-400' : 'text-zinc-400'}`}>
+                Run Unattended
               </span>
             </label>
           </div>

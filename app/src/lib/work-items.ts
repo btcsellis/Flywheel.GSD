@@ -30,6 +30,7 @@ export interface WorkItemMetadata {
   status: WorkItemStatus;
   dueDate?: string;
   important?: boolean;
+  unattended?: boolean;
   assignedSession?: string;
   workflow?: WorkflowType;
   tmuxSession?: string;
@@ -155,6 +156,7 @@ function parseMetadata(content: string): WorkItemMetadata | null {
   };
 
   const importantValue = getValue('important');
+  const unattendedValue = getValue('unattended');
   const workflowValue = getValue('workflow');
 
   return {
@@ -164,6 +166,7 @@ function parseMetadata(content: string): WorkItemMetadata | null {
     status: normalizeStatus(getValue('status')),
     dueDate: getValue('due') || getValue('due-date') || undefined,
     important: importantValue === 'true' || importantValue === 'yes',
+    unattended: unattendedValue === 'true' || unattendedValue === 'yes',
     assignedSession: getValue('assigned-session') || undefined,
     workflow: (workflowValue === 'main' || workflowValue === 'worktree') ? workflowValue : undefined,
     tmuxSession: getValue('tmux-session') || undefined,
@@ -272,6 +275,7 @@ export async function createWorkItem(
     successCriteria: string[];
     dueDate?: string;
     important?: boolean;
+    unattended?: boolean;
     plan?: string[];
     verification?: string;
     context?: string;
@@ -314,7 +318,7 @@ export async function createWorkItem(
 - id: ${id}
 - project: ${data.project}
 - created: ${date}
-- status: new${data.dueDate ? `\n- due: ${data.dueDate}` : ''}${data.important ? `\n- important: true` : ''}
+- status: new${data.dueDate ? `\n- due: ${data.dueDate}` : ''}${data.important ? `\n- important: true` : ''}${data.unattended ? `\n- unattended: true` : ''}
 - assigned-session:
 
 ## Description
