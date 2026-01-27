@@ -4,7 +4,7 @@
 - id: worktree-test-port-664
 - project: personal/flywheel-gsd
 - created: 2026-01-27
-- status: review
+- status: done
 - workflow: main
 - tmux-session: flywheel-gsd
 - assigned-session:
