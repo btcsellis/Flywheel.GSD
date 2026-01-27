@@ -75,6 +75,19 @@ rm -f .flywheel-prompt-*.txt 2>/dev/null
 
 # Remove transitioning markers in flywheel-gsd
 rm -f "$FLYWHEEL_PATH/.flywheel-transitioning-"* 2>/dev/null
+
+# Remove orphaned worktree directories (dirs with no registered git worktree)
+WORKTREE_PARENT="$(dirname "$FLYWHEEL_PATH")/flywheel-gsd-worktrees"
+if [ -d "$WORKTREE_PARENT" ]; then
+  for dir in "$WORKTREE_PARENT"/*/; do
+    [ -d "$dir" ] || continue
+    DIRNAME=$(basename "$dir")
+    if ! git worktree list | grep -q "$DIRNAME"; then
+      rm -rf "$dir"
+      echo "Removed orphaned worktree dir: $DIRNAME"
+    fi
+  done
+fi
 ```
 
 ### 6. Report Results

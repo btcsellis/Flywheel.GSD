@@ -259,15 +259,14 @@ cd "$MAIN_PROJECT"
 git worktree prune
 ```
 
-**Remove worktree (with fallback):**
+**Remove worktree:**
 ```bash
-# Try git worktree remove first
-git worktree remove "$WORKTREE_PATH" --force 2>/dev/null
+# Remove git worktree registration
+git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
 
-# If that fails (orphaned/not a working tree), use rm -rf
-if [ -d "$WORKTREE_PATH" ]; then
-  rm -rf "$WORKTREE_PATH"
-fi
+# Always remove the directory — git worktree remove leaves behind
+# untracked files (e.g. .claude/settings.local.json)
+rm -rf "$WORKTREE_PATH" 2>/dev/null || true
 ```
 
 **Delete the branch:**
@@ -276,9 +275,8 @@ git branch -d "$BRANCH" 2>/dev/null || git branch -D "$BRANCH" 2>/dev/null || tr
 ```
 
 **Worktree Cleanup Error Handling:**
-- If `git worktree remove` fails with "not a working tree", the `rm -rf` fallback handles it
+- `git worktree remove` deregisters the worktree; `rm -rf` ensures the directory is fully removed
 - If the directory doesn't exist, that's fine - cleanup is already done
-- Do NOT retry the same failing command - use the fallback instead
 - If all cleanup fails, report the issue and let the user clean up manually
 
 #### Kill tmux session:
