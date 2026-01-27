@@ -4,7 +4,7 @@
 - id: hook-auto-permission-flywheel-802
 - project: personal/flywheel-gsd
 - created: 2026-01-26
-- status: review
+- status: done
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-hook-auto-permission-flywheel-802
 - assigned-session: 
@@ -118,3 +118,6 @@ Permission requests from worktree paths (e.g. `flywheel-gsd-worktrees/branch-nam
 - 2026-01-27 16:45 Tested hook: worktree path correctly logs base_repo_path, AskUserQuestion correctly skipped
 - 2026-01-27 16:45 Build passes, all success criteria verified
 - 2026-01-27 16:45 Ready for /flywheel-done
+- 2026-01-27 16:50 Committed to telegram-integration and worktree branch
+- 2026-01-27 16:50 PR created: https://github.com/btcsellis/Flywheel.GSD/pull/15
+- 2026-01-27 16:50 Work item completed
