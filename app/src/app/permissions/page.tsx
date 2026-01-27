@@ -302,11 +302,11 @@ export default function PermissionsPage() {
 
       {/* Unified Permissions Table */}
       <div className="border border-zinc-800 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[calc(100vh-200px)]">
           <table className="w-full">
-            <thead>
-              <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                <th className="text-left p-3 text-sm font-medium text-zinc-400 sticky left-0 bg-zinc-900/50 min-w-[280px]">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-zinc-800 bg-zinc-900">
+                <th className="text-left p-3 text-sm font-medium text-zinc-400 sticky left-0 bg-zinc-900 z-20 min-w-[280px]">
                   Rule
                 </th>
                 <th className="p-3 text-sm font-medium text-zinc-400 text-center min-w-[80px]">

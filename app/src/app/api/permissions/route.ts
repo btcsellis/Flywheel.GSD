@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { discoverProjects, AREAS } from '@/lib/projects';
 import {
-  getAllKnownRules,
   readGlobalRawRules,
   readAreaRawRules,
   readProjectRawRules,
@@ -26,10 +25,8 @@ export async function GET() {
     const projectsByArea = await discoverProjects();
     const globalEnabledRules = await readGlobalRawRules();
 
-    // Collect all known rules from categories
-    const knownRules = new Set(getAllKnownRules());
-
-    // Add any custom rules from global settings
+    // Collect rules only from settings files (global, area, project)
+    const knownRules = new Set<string>();
     for (const rule of globalEnabledRules) {
       knownRules.add(rule);
     }
@@ -66,8 +63,24 @@ export async function GET() {
       }
     }
 
+    // Build sets for sorting by scope tier
+    const globalSet = new Set(globalEnabledRules);
+    const areaSet = new Set(Object.values(areaEnabled).flat());
+    const projectSet = new Set(projects.flatMap(p => p.enabledRules));
+
+    function ruleTier(rule: string): number {
+      if (globalSet.has(rule)) return 0;
+      if (areaSet.has(rule)) return 1;
+      if (projectSet.has(rule)) return 2;
+      return 3;
+    }
+
     const result: UnifiedPermissionsResponse = {
-      allRules: Array.from(knownRules).sort(),
+      allRules: Array.from(knownRules).sort((a, b) => {
+        const tierDiff = ruleTier(a) - ruleTier(b);
+        if (tierDiff !== 0) return tierDiff;
+        return a.localeCompare(b);
+      }),
       globalEnabled: globalEnabledRules,
       areaEnabled,
       projects,
