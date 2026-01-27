@@ -240,16 +240,31 @@ function NewWorkItemContent() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title */}
-        <div>
+        {/* Title + Actions */}
+        <div className="flex items-center gap-3">
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
-            className={`w-full text-2xl font-bold bg-transparent border-none outline-none ${important ? 'text-red-400 placeholder-red-400/50' : 'text-zinc-100 placeholder-zinc-600'}`}
+            className={`flex-1 text-2xl font-bold bg-transparent border-none outline-none ${important ? 'text-red-400 placeholder-red-400/50' : 'text-zinc-100 placeholder-zinc-600'}`}
             placeholder="Work item title"
           />
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-zinc-100 text-zinc-900 rounded font-medium text-sm hover:bg-white transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Creating...' : 'Create Work Item'}
+            </button>
+            <Link
+              href="/"
+              className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded font-medium text-sm hover:border-zinc-700 hover:text-zinc-300 transition-colors"
+            >
+              Cancel
+            </Link>
+          </div>
         </div>
 
         {/* Metadata Row */}
@@ -513,22 +528,6 @@ function NewWorkItemContent() {
           />
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-zinc-800">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-zinc-100 text-zinc-900 rounded font-medium text-sm hover:bg-white transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Creating...' : 'Create Work Item'}
-          </button>
-          <Link
-            href="/"
-            className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded font-medium text-sm hover:border-zinc-700 hover:text-zinc-300 transition-colors"
-          >
-            Cancel
-          </Link>
-        </div>
       </form>
     </div>
   );
