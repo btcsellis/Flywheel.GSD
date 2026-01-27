@@ -30,6 +30,9 @@ npm-debug.log*
 # Testing
 coverage/
 
+# Claude Code local settings (not committed)
+.claude/settings.local.json
+
 # Misc
 *.tmp
 *.temp
