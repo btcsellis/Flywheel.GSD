@@ -5,7 +5,7 @@
 - project: personal/flywheel-gsd
 - created: 2026-01-26
 - status: new
-- assigned-session:
+- assigned-session: 
 
 ## Description
 
@@ -29,8 +29,9 @@ When I kick off a new worktree, I always get a prompt like the one below. Let's 
 
  Enter to confirm · Esc to cancel
 
-## Success Criteria
+I suspect we can do that by inserting a suitable permission in the worktree's settings.local.json
 
+## Success Criteria
 
 
 ## Execution Log
