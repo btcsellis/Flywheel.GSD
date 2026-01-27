@@ -122,8 +122,8 @@ async function writeClaudeSettingsFile(filePath: string, settings: ClaudeSetting
  * with paths rewritten to reference the worktree location.
  *
  * - If parent has no .claude directory, silently skips (no error)
- * - If worktree already has .claude, doesn't overwrite
- * - Copies both settings.json and settings.local.json (if they exist)
+ * - Copies settings.json and settings.local.json individually (skips each if target already has it)
+ * - Safe to call even if .claude/ dir already exists (e.g. with empty settings.json)
  * - Rewrites path-based permissions to use worktree path
  * - Does NOT rewrite flywheel-specific permissions
  */
@@ -142,69 +142,67 @@ async function copyClaudeSettingsForWorktree(
     return;
   }
 
-  try {
-    // Check if target already has .claude (don't overwrite)
-    await fs.access(targetClaudeDir);
-    // Target exists, don't overwrite
-    return;
-  } catch {
-    // Target doesn't exist, proceed with copy
-  }
-
   // Get flywheel rules that should not be rewritten
   const flywheelRules = new Set(getFlywheelRules());
 
   try {
-    // Create target .claude directory
+    // Create target .claude directory (no-op if it already exists)
     await fs.mkdir(targetClaudeDir, { recursive: true });
 
-    // Process settings.json
+    // Process settings.json (skip if target already has one)
+    const targetSettingsPath = path.join(targetClaudeDir, 'settings.json');
     const settingsPath = path.join(sourceClaudeDir, 'settings.json');
-    const settings = await readClaudeSettingsFile(settingsPath);
-    if (settings) {
-      if (settings.permissions?.allow) {
-        settings.permissions.allow = rewritePermissionsForWorktree(
-          settings.permissions.allow,
-          projectPath,
-          worktreePath,
-          flywheelRules
-        );
+    try {
+      await fs.access(targetSettingsPath);
+    } catch {
+      const settings = await readClaudeSettingsFile(settingsPath);
+      if (settings) {
+        if (settings.permissions?.allow) {
+          settings.permissions.allow = rewritePermissionsForWorktree(
+            settings.permissions.allow,
+            projectPath,
+            worktreePath,
+            flywheelRules
+          );
+        }
+        if (settings.permissions?.deny) {
+          settings.permissions.deny = rewritePermissionsForWorktree(
+            settings.permissions.deny,
+            projectPath,
+            worktreePath,
+            flywheelRules
+          );
+        }
+        await writeClaudeSettingsFile(targetSettingsPath, settings);
       }
-      if (settings.permissions?.deny) {
-        settings.permissions.deny = rewritePermissionsForWorktree(
-          settings.permissions.deny,
-          projectPath,
-          worktreePath,
-          flywheelRules
-        );
-      }
-      await writeClaudeSettingsFile(path.join(targetClaudeDir, 'settings.json'), settings);
     }
 
-    // Process settings.local.json (if exists)
+    // Process settings.local.json (skip if target already has one)
+    const targetLocalSettingsPath = path.join(targetClaudeDir, 'settings.local.json');
     const localSettingsPath = path.join(sourceClaudeDir, 'settings.local.json');
-    const localSettings = await readClaudeSettingsFile(localSettingsPath);
-    if (localSettings) {
-      if (localSettings.permissions?.allow) {
-        localSettings.permissions.allow = rewritePermissionsForWorktree(
-          localSettings.permissions.allow,
-          projectPath,
-          worktreePath,
-          flywheelRules
-        );
+    try {
+      await fs.access(targetLocalSettingsPath);
+    } catch {
+      const localSettings = await readClaudeSettingsFile(localSettingsPath);
+      if (localSettings) {
+        if (localSettings.permissions?.allow) {
+          localSettings.permissions.allow = rewritePermissionsForWorktree(
+            localSettings.permissions.allow,
+            projectPath,
+            worktreePath,
+            flywheelRules
+          );
+        }
+        if (localSettings.permissions?.deny) {
+          localSettings.permissions.deny = rewritePermissionsForWorktree(
+            localSettings.permissions.deny,
+            projectPath,
+            worktreePath,
+            flywheelRules
+          );
+        }
+        await writeClaudeSettingsFile(targetLocalSettingsPath, localSettings);
       }
-      if (localSettings.permissions?.deny) {
-        localSettings.permissions.deny = rewritePermissionsForWorktree(
-          localSettings.permissions.deny,
-          projectPath,
-          worktreePath,
-          flywheelRules
-        );
-      }
-      await writeClaudeSettingsFile(
-        path.join(targetClaudeDir, 'settings.local.json'),
-        localSettings
-      );
     }
   } catch {
     // Copy failed - don't fail the worktree creation
