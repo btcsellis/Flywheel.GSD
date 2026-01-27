@@ -24,7 +24,7 @@ function Nav() {
               className="flex items-center gap-2 text-xl font-bold text-zinc-100 tracking-tight"
             >
               FLYWHEEL
-              <span className="text-[10px] font-normal text-zinc-500 uppercase tracking-widest">
+              <span className="text-[10px] font-normal text-zinc-400 uppercase tracking-widest">
                 GSD
               </span>
             </Link>

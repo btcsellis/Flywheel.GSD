@@ -339,7 +339,7 @@ export default function PermissionsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-zinc-100">Permissions</h1>
-        <p className="text-sm text-zinc-500 mt-1">
+        <p className="text-sm text-zinc-400 mt-1">
           Configure Claude Code auto-permissions for each project. Changes are saved immediately to
           each project&apos;s <code className="text-zinc-400">.claude/settings.local.json</code>.
           Global permissions apply to all projects.
@@ -376,7 +376,7 @@ export default function PermissionsPage() {
                 </th>
                 <th className="p-3 text-sm font-medium text-zinc-400 text-center min-w-[80px]">
                   <div className="text-zinc-300">Global</div>
-                  <div className="text-[10px] text-zinc-600">~/.claude</div>
+                  <div className="text-[10px] text-zinc-500">~/.claude</div>
                 </th>
                 {AREA_ORDER.map((area) => {
                   const projects = projectsByArea[area] || [];
@@ -388,7 +388,7 @@ export default function PermissionsPage() {
                       <div className="font-semibold" style={{ color: AREA_COLORS[area] }}>
                         {AREA_LABELS[area]}
                       </div>
-                      <div className="text-[10px] text-zinc-600">~/.claude-{area}</div>
+                      <div className="text-[10px] text-zinc-500">~/.claude-{area}</div>
                     </th>,
                     ...projects.map((project) => (
                       <th
@@ -402,7 +402,7 @@ export default function PermissionsPage() {
                         >
                           {project.projectName}
                         </div>
-                        <div className="text-[10px] text-zinc-600 uppercase">{area}</div>
+                        <div className="text-[10px] text-zinc-500 uppercase">{area}</div>
                       </th>
                     )),
                   ];
@@ -507,7 +507,7 @@ export default function PermissionsPage() {
         </div>
       </div>
 
-      <div className="text-xs text-zinc-600">
+      <div className="text-xs text-zinc-500">
         {permissions.allRules.length} rules total
       </div>
     </div>

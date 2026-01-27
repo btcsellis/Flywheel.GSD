@@ -567,7 +567,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                                 {getNextStatusLabel(formData.status)}
                               </div>
 
-                              <div className="px-3 py-2 text-xs text-zinc-500 border-b border-zinc-700/50">
+                              <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-700/50">
                                 Choose workflow type:
                               </div>
                               <button
@@ -576,7 +576,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                                 className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors disabled:opacity-50"
                               >
                                 <div className="text-sm text-zinc-300">Main Branch</div>
-                                <div className="text-xs text-zinc-500">Work directly on main, commit & sync</div>
+                                <div className="text-xs text-zinc-400">Work directly on main, commit & sync</div>
                               </button>
                               <button
                                 onClick={() => handleSelectWorkflow('worktree')}
@@ -584,7 +584,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                                 className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors border-t border-zinc-700/50 disabled:opacity-50"
                               >
                                 <div className="text-sm text-zinc-300">New Worktree</div>
-                                <div className="text-xs text-zinc-500">Isolated branch, creates PR on ship</div>
+                                <div className="text-xs text-zinc-400">Isolated branch, creates PR on ship</div>
                               </button>
 
                               <div className="border-t border-zinc-700">
@@ -695,7 +695,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           <div className="flex items-center gap-4 px-4 py-3 bg-zinc-900/50 rounded border border-zinc-800/50 text-sm">
             {formData.workflow && (
               <div className="flex items-center gap-2">
-                <span className="text-zinc-500">Workflow:</span>
+                <span className="text-zinc-400">Workflow:</span>
                 <span className={`px-2 py-0.5 rounded text-xs uppercase ${
                   formData.workflow === 'main'
                     ? 'bg-blue-500/20 text-blue-400'
@@ -707,7 +707,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
             )}
             {formData.tmuxSession && (
               <div className="flex items-center gap-2">
-                <span className="text-zinc-500">Session:</span>
+                <span className="text-zinc-400">Session:</span>
                 <code className="px-2 py-0.5 bg-zinc-800 rounded text-zinc-400 font-mono text-xs">
                   {formData.tmuxSession}
                 </code>
@@ -734,11 +734,11 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
         <div>
           <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Success Criteria
-            <span className="ml-2 text-zinc-500 normal-case">
+            <span className="ml-2 text-zinc-400 normal-case">
               ({formData.successCriteria.filter(c => c.completed && c.text.trim()).length}/{formData.successCriteria.filter(c => c.text.trim()).length})
             </span>
           </label>
-          <p className="text-[15px] text-zinc-500 mb-2">Specific, verifiable outcomes that define when this work is complete.</p>
+          <p className="text-[15px] text-zinc-400 mb-2">Specific, verifiable outcomes that define when this work is complete.</p>
           <div className="space-y-2">
             {formData.successCriteria.map((criterion, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -758,7 +758,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                 <button
                   type="button"
                   onClick={() => removeCriterion(index)}
-                  className="px-2 py-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                  className="px-2 py-2 text-zinc-500 hover:text-zinc-400 transition-colors"
                 >
                   ×
                 </button>
@@ -779,11 +779,11 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Plan
           </label>
-          <p className="text-[15px] text-zinc-500 mb-2">Ordered steps to accomplish this work. Claude Code will follow these.</p>
+          <p className="text-[15px] text-zinc-400 mb-2">Ordered steps to accomplish this work. Claude Code will follow these.</p>
           <div className="space-y-2">
             {formData.plan.map((step, index) => (
               <div key={index} className="flex items-center gap-2">
-                <span className="text-sm text-zinc-500 w-6">{index + 1}.</span>
+                <span className="text-sm text-zinc-400 w-6">{index + 1}.</span>
                 <input
                   type="text"
                   value={step}
@@ -794,7 +794,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                 <button
                   type="button"
                   onClick={() => removePlanStep(index)}
-                  className="px-2 py-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                  className="px-2 py-2 text-zinc-500 hover:text-zinc-400 transition-colors"
                 >
                   ×
                 </button>
@@ -815,7 +815,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Verification
           </label>
-          <p className="text-[15px] text-zinc-500 mb-2">How to verify each success criterion is met. Commands, tests, manual checks.</p>
+          <p className="text-[15px] text-zinc-400 mb-2">How to verify each success criterion is met. Commands, tests, manual checks.</p>
           <AutoResizeTextarea
             value={formData.verification}
             onChange={v => setFormData({ ...formData, verification: v })}
@@ -830,7 +830,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Context
           </label>
-          <p className="text-[15px] text-zinc-500 mb-2">Background info, dependencies, related issues, links, architectural decisions.</p>
+          <p className="text-[15px] text-zinc-400 mb-2">Background info, dependencies, related issues, links, architectural decisions.</p>
           <AutoResizeTextarea
             value={formData.context}
             onChange={v => setFormData({ ...formData, context: v })}
@@ -845,7 +845,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Files
           </label>
-          <p className="text-[15px] text-zinc-500 mb-2">Key files to modify or review. Helps Claude Code focus.</p>
+          <p className="text-[15px] text-zinc-400 mb-2">Key files to modify or review. Helps Claude Code focus.</p>
           <div className="space-y-2">
             {formData.files.map((file, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -859,7 +859,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                 <button
                   type="button"
                   onClick={() => removeFile(index)}
-                  className="px-2 py-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                  className="px-2 py-2 text-zinc-500 hover:text-zinc-400 transition-colors"
                 >
                   ×
                 </button>
@@ -894,7 +894,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           <label className="block text-sm font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Execution Log
           </label>
-          <p className="text-[15px] text-zinc-500 mb-2">Timestamped record of work done. Claude Code appends entries here.</p>
+          <p className="text-[15px] text-zinc-400 mb-2">Timestamped record of work done. Claude Code appends entries here.</p>
           <div className="space-y-2">
             {formData.executionLog.map((entry, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -907,7 +907,7 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
                 <button
                   type="button"
                   onClick={() => removeLogEntry(index)}
-                  className="px-2 py-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                  className="px-2 py-2 text-zinc-500 hover:text-zinc-400 transition-colors"
                 >
                   ×
                 </button>
