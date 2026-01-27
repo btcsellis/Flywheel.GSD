@@ -227,11 +227,11 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
 const GLOBAL_SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
 
 function getAreaSettingsPath(areaValue: string): string {
-  return path.join(os.homedir(), `.claude-${areaValue}`, 'settings.json');
+  return path.join(os.homedir(), `.claude-${areaValue}`, 'settings.local.json');
 }
 
 function getProjectSettingsPath(projectPath: string): string {
-  return path.join(projectPath, '.claude', 'settings.json');
+  return path.join(projectPath, '.claude', 'settings.local.json');
 }
 
 /**
