@@ -445,6 +445,11 @@ function KanbanCard({
                     {item.metadata.workflow}
                   </span>
                 )}
+                {item.metadata.unattended && (
+                  <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">
+                    auto
+                  </span>
+                )}
               </div>
               {dueStatus && (
                 <span
