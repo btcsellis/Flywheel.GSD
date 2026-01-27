@@ -5,6 +5,8 @@
 - project: personal/flywheel-gsd
 - created: 2026-01-26
 - status: new
+- workflow: main
+- tmux-session: flywheel-gsd
 - assigned-session:
 
 ## Description
