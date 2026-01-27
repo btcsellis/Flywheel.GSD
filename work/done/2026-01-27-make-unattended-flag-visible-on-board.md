@@ -4,7 +4,7 @@
 - id: make-unattended-flag-visible-on-board-622
 - project: personal/flywheel-gsd
 - created: 2026-01-27
-- status: review
+- status: done
 - unattended: true
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-make-unattended-flag-visible-on-board-622
@@ -66,3 +66,6 @@ If an item is set to unattended, show a visual indicator on the kanban board car
 - 2026-01-27T21:03:30.000Z Browser verification: "Text is hard to read" card shows AUTO badge; cards without unattended flag do not
 - 2026-01-27T21:04:00.000Z All success criteria verified
 - 2026-01-27T21:04:00.000Z Ready for /flywheel-done
+- 2026-01-27T21:05:00.000Z Committed and pushed (95a04d9)
+- 2026-01-27T21:05:00.000Z PR created: https://github.com/btcsellis/Flywheel.GSD/pull/19
+- 2026-01-27T21:05:00.000Z Work item completed
