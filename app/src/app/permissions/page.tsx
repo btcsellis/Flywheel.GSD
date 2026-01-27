@@ -14,6 +14,7 @@ interface ProjectRulesState {
 interface UnifiedPermissionsState {
   allRules: string[];
   globalEnabled: string[];
+  areaEnabled: Record<string, string[]>;
   projects: ProjectRulesState[];
 }
 
@@ -22,6 +23,14 @@ const AREA_COLORS: Record<string, string> = {
   sophia: '#f97316',
   personal: '#22c55e',
 };
+
+const AREA_LABELS: Record<string, string> = {
+  bellwether: 'Bellwether',
+  sophia: 'Sophia',
+  personal: 'Personal',
+};
+
+const AREA_ORDER = ['bellwether', 'sophia', 'personal'];
 
 /**
  * Parse a rule string into tool and pattern components
@@ -143,6 +152,54 @@ export default function PermissionsPage() {
     [permissions]
   );
 
+  const toggleAreaRule = useCallback(
+    async (areaValue: string, rule: string, enabled: boolean) => {
+      if (!permissions) return;
+
+      setSaving(`area:${areaValue}-${rule}`);
+
+      const currentAreaRules = permissions.areaEnabled[areaValue] || [];
+      const newAreaRules = enabled
+        ? [...currentAreaRules, rule]
+        : currentAreaRules.filter((r) => r !== rule);
+
+      // Optimistic update
+      setPermissions((prev) =>
+        prev
+          ? { ...prev, areaEnabled: { ...prev.areaEnabled, [areaValue]: newAreaRules } }
+          : prev
+      );
+
+      try {
+        const res = await fetch('/api/permissions/rule', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rule, scope: `area:${areaValue}`, enabled }),
+        });
+
+        if (!res.ok) throw new Error('Failed to save');
+      } catch {
+        // Rollback on error
+        setPermissions((prev) =>
+          prev
+            ? {
+                ...prev,
+                areaEnabled: {
+                  ...prev.areaEnabled,
+                  [areaValue]: enabled
+                    ? currentAreaRules
+                    : [...currentAreaRules, rule],
+                },
+              }
+            : prev
+        );
+      } finally {
+        setSaving(null);
+      }
+    },
+    [permissions]
+  );
+
   const toggleProjectRule = useCallback(
     async (projectPath: string, rule: string, enabled: boolean) => {
       if (!permissions) return;
@@ -225,8 +282,12 @@ export default function PermissionsPage() {
     {} as Record<string, ProjectRulesState[]>
   );
 
-  // Create a Set for fast global lookup
+  // Create Sets for fast lookup
   const globalEnabledSet = new Set(permissions.globalEnabled);
+  const areaEnabledSets: Record<string, Set<string>> = {};
+  for (const [area, rules] of Object.entries(permissions.areaEnabled || {})) {
+    areaEnabledSets[area] = new Set(rules);
+  }
 
   return (
     <div className="space-y-6">
@@ -252,23 +313,35 @@ export default function PermissionsPage() {
                   <div className="text-zinc-300">Global</div>
                   <div className="text-[10px] text-zinc-600">~/.claude</div>
                 </th>
-                {Object.entries(projectsByArea).map(([area, projects]) =>
-                  projects.map((project) => (
+                {AREA_ORDER.map((area) => {
+                  const projects = projectsByArea[area] || [];
+                  return [
                     <th
-                      key={project.projectPath}
-                      className="p-3 text-sm font-medium text-center min-w-[100px]"
+                      key={`area-${area}`}
+                      className="p-3 text-sm font-medium text-center min-w-[80px] border-l border-zinc-700/50"
                     >
-                      <div
-                        className="text-zinc-300 truncate"
-                        title={project.projectPath}
-                        style={{ color: AREA_COLORS[area] }}
-                      >
-                        {project.projectName}
+                      <div className="font-semibold" style={{ color: AREA_COLORS[area] }}>
+                        {AREA_LABELS[area]}
                       </div>
-                      <div className="text-[10px] text-zinc-600 uppercase">{area}</div>
-                    </th>
-                  ))
-                )}
+                      <div className="text-[10px] text-zinc-600">~/.claude-{area}</div>
+                    </th>,
+                    ...projects.map((project) => (
+                      <th
+                        key={project.projectPath}
+                        className="p-3 text-sm font-medium text-center min-w-[100px]"
+                      >
+                        <div
+                          className="text-zinc-300 truncate"
+                          title={project.projectPath}
+                          style={{ color: AREA_COLORS[area] }}
+                        >
+                          {project.projectName}
+                        </div>
+                        <div className="text-[10px] text-zinc-600 uppercase">{area}</div>
+                      </th>
+                    )),
+                  ];
+                })}
               </tr>
             </thead>
             <tbody>
@@ -301,31 +374,52 @@ export default function PermissionsPage() {
                         )}
                       </div>
                     </td>
-                    {Object.entries(projectsByArea).map(([, projects]) =>
-                      projects.map((project) => {
-                        const isProjectEnabled = project.enabledRules.includes(rule);
-                        const isSavingProject = saving === `${project.projectPath}-${rule}`;
+                    {AREA_ORDER.map((area) => {
+                      const projects = projectsByArea[area] || [];
+                      const isAreaEnabled = areaEnabledSets[area]?.has(rule) ?? false;
+                      const isSavingArea = saving === `area:${area}-${rule}`;
 
-                        return (
-                          <td key={project.projectPath} className="p-3 text-center">
-                            <div className="flex justify-center">
-                              {isSavingProject ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-                              ) : (
-                                <Checkbox
-                                  checked={isProjectEnabled}
-                                  onChange={(checked) =>
-                                    toggleProjectRule(project.projectPath, rule, checked)
-                                  }
-                                  disabled={isGlobalEnabled}
-                                  disabledChecked={isGlobalEnabled}
-                                />
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })
-                    )}
+                      return [
+                        <td key={`area-${area}`} className="p-3 text-center border-l border-zinc-700/50">
+                          <div className="flex justify-center">
+                            {isSavingArea ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                            ) : (
+                              <Checkbox
+                                checked={isAreaEnabled}
+                                onChange={(checked) => toggleAreaRule(area, rule, checked)}
+                                disabled={isGlobalEnabled}
+                                disabledChecked={isGlobalEnabled}
+                              />
+                            )}
+                          </div>
+                        </td>,
+                        ...projects.map((project) => {
+                          const isProjectEnabled = project.enabledRules.includes(rule);
+                          const isSavingProject = saving === `${project.projectPath}-${rule}`;
+                          const isDisabledByParent = isGlobalEnabled || isAreaEnabled;
+
+                          return (
+                            <td key={project.projectPath} className="p-3 text-center">
+                              <div className="flex justify-center">
+                                {isSavingProject ? (
+                                  <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                                ) : (
+                                  <Checkbox
+                                    checked={isProjectEnabled}
+                                    onChange={(checked) =>
+                                      toggleProjectRule(project.projectPath, rule, checked)
+                                    }
+                                    disabled={isDisabledByParent}
+                                    disabledChecked={isDisabledByParent}
+                                  />
+                                )}
+                              </div>
+                            </td>
+                          );
+                        }),
+                      ];
+                    })}
                   </tr>
                 );
               })}

@@ -223,6 +223,10 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
 
 const GLOBAL_SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
 
+function getAreaSettingsPath(areaValue: string): string {
+  return path.join(os.homedir(), `.claude-${areaValue}`, 'settings.json');
+}
+
 function getProjectSettingsPath(projectPath: string): string {
   return path.join(projectPath, '.claude', 'settings.json');
 }
@@ -517,6 +521,52 @@ export async function readProjectRawRules(projectPath: string): Promise<string[]
   const settingsPath = getProjectSettingsPath(projectPath);
   const settings = await readSettingsFile(settingsPath);
   return settings?.permissions?.allow || [];
+}
+
+/**
+ * Read raw rules from area settings (not converted to categories)
+ */
+export async function readAreaRawRules(areaValue: string): Promise<string[]> {
+  const settingsPath = getAreaSettingsPath(areaValue);
+  const settings = await readSettingsFile(settingsPath);
+  return settings?.permissions?.allow || [];
+}
+
+/**
+ * Toggle a single rule in area settings
+ */
+export async function writeAreaRule(areaValue: string, rule: string, enabled: boolean): Promise<void> {
+  const settingsPath = getAreaSettingsPath(areaValue);
+  const existingSettings = (await readSettingsFile(settingsPath)) || {};
+  const currentRules = existingSettings.permissions?.allow || [];
+
+  let newRules: string[];
+  if (enabled) {
+    newRules = currentRules.includes(rule) ? currentRules : [...currentRules, rule];
+  } else {
+    newRules = currentRules.filter((r) => r !== rule);
+  }
+
+  const newSettings: ClaudeSettings = {
+    ...existingSettings,
+    permissions: {
+      ...existingSettings.permissions,
+      allow: newRules,
+    },
+  };
+
+  if (newSettings.permissions?.allow?.length === 0) {
+    delete newSettings.permissions.allow;
+  }
+
+  if (
+    newSettings.permissions &&
+    Object.keys(newSettings.permissions).length === 0
+  ) {
+    delete newSettings.permissions;
+  }
+
+  await writeSettingsFile(settingsPath, newSettings);
 }
 
 /**

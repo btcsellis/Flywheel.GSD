@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeGlobalRule, writeProjectRule } from '@/lib/permissions';
+import { writeGlobalRule, writeAreaRule, writeProjectRule } from '@/lib/permissions';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -33,6 +33,9 @@ export async function PUT(request: NextRequest) {
 
     if (scope === 'global') {
       await writeGlobalRule(rule, enabled);
+    } else if (scope.startsWith('area:')) {
+      const areaValue = scope.slice(5);
+      await writeAreaRule(areaValue, rule, enabled);
     } else {
       await writeProjectRule(scope, rule, enabled);
     }
