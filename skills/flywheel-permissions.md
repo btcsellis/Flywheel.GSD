@@ -90,9 +90,11 @@ Ask the user which scope to check and write to:
 ```
 Which settings scope should I work with?
 1. Project .claude/settings.local.json (current project only)
-2. Global ~/.claude/settings.local.json (all projects)
+2. Global ~/.claude/settings.local.json (writes to all 4 locations: global + personal/bellwether/sophia areas)
 3. Show proposals only (don't write)
 ```
+
+**Note on Global scope**: When "Global" is selected, rules are written to `~/.claude/settings.local.json` AND all three area settings files (`~/.claude-personal/`, `~/.claude-bellwether/`, `~/.claude-sophia/`). This is necessary because `CLAUDE_CONFIG_DIR` replaces `~/.claude/` in area sessions via direnv.
 
 Use the AskUserQuestion tool with these options.
 
@@ -143,6 +145,7 @@ If confirmed:
 2. Parse the JSON
 3. Add the new entries to `permissions.allow`
 4. Write the file back with proper formatting (2-space indent)
+5. **If Global scope**: also write the same entries to all 3 area settings files (`~/.claude-personal/settings.local.json`, `~/.claude-bellwether/settings.local.json`, `~/.claude-sophia/settings.local.json`), preserving existing area-specific rules
 
 ### 8. Optionally Clear Log
 
