@@ -4,66 +4,46 @@
 - id: hook-auto-permission-flywheel-802
 - project: personal/flywheel-gsd
 - created: 2026-01-26
-- status: new
+- status: defined
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-hook-auto-permission-flywheel-802
-- assigned-session:
+- assigned-session: 
 
 ## Description
 
-Implement a system to collect permission requests and provide a way to add them to the permission management system (`.claude/settings.json`) with user approval.
+Implement a two-part system for managing Claude Code permission requests:
 
-**Problem:** Permission prompts slow down flywheel workflows. Currently, adding permissions to `settings.json` is manual - you have to remember what was requested and type out the permission string.
+**Part 1: Permission Request Logging (Hook)**
+Extend the existing `PermissionRequest` hook to log every permission request to a central file in the flywheel-gsd repo (`permissions/` directory). Each log entry captures the tool name, input pattern, project path, and timestamp. The hook continues to send Telegram notifications as before.
 
-**Solution:**
-1. Hook logs all permission requests to a file
-2. A command/skill reviews collected permissions and offers to add them to settings.json
+**Part 2: Permission Conversion Skill**
+A Claude Code skill that reads the collected permission log, deduplicates and generalizes the requests into well-scoped permission entries, and writes them to `settings.local.json` at the user's chosen scope (project, global, or area). The skill presents proposed entries for confirmation before writing.
 
-**Hook type:** `PermissionRequest` (for logging)
-
-**Workflow:**
-1. `PermissionRequest` hook logs each request to a file (e.g., `~/.claude/permission-requests.log`)
-2. After a session (or on demand), run a command like `/flywheel-permissions`
-3. Command shows collected permission requests
-4. User selects which to add to `.claude/settings.json` or `.claude/settings.local.json`
-5. Selected permissions are added to the allow list
-
-**Example flow:**
-```
-$ /flywheel-permissions
-
-Collected permission requests since last review:
-
-1. Bash(git add work/*)
-2. Bash(git commit -m *)
-3. Edit(/Users/.../work/active/*.md)
-4. Bash(npm run build)
-
-Select permissions to add (comma-separated, or 'all'): 1,2,3
-
-Added to .claude/settings.local.json:
-- Bash(git add work/*)
-- Bash(git commit -m *)
-- Edit(/Users/.../work/active/*.md)
-```
+**Worktree Path Handling**
+Permission requests from worktree paths (e.g. `flywheel-gsd-worktrees/branch-name/`) are normalized to generate entries covering both the base repo path and a worktrees glob pattern, avoiding overly specific per-branch permissions.
 
 ## Success Criteria
 
-- [ ] Hook script logs permission requests to a file
-- [ ] Hook configuration added to `.claude/settings.json`
-- [ ] Command/skill to review collected permissions
-- [ ] User can select which permissions to add
-- [ ] Selected permissions added to settings.json or settings.local.json
-- [ ] Duplicate permissions are detected and skipped
-- [ ] Log is cleared after permissions are reviewed/added
+- [ ] PermissionRequest hook logs each request to `~/personal/flywheel-gsd/permissions/permission-requests.jsonl` with tool, input, project, and timestamp
+- [ ] Existing Telegram notification behavior is preserved (hook extends, not replaces)
+- [ ] Log entries from worktree paths include both the raw path and the normalized base repo path
+- [ ] A new skill (e.g. `/flywheel-permissions`) reads the log and proposes deduplicated, well-scoped permission entries
+- [ ] Skill asks user which scope level to write to: project `.claude/settings.local.json`, global `~/.claude/settings.local.json`, or skip
+- [ ] Skill shows proposed entries and requires explicit confirmation before writing
+- [ ] Worktree paths are generalized to cover both base repo (`flywheel-gsd/**`) and worktrees glob (`flywheel-gsd-worktrees/**`)
+- [ ] Written permissions follow existing format patterns (e.g. `Read(path)`, `Bash(cmd:*)`, `Edit(path)`)
+- [ ] Skill handles duplicate detection - doesn't propose entries that already exist in target settings file
+- [ ] All existing tests pass, no type errors
 
 ## Notes
 
-This is about building up the permission allow-list over time with user control, not auto-allowing at runtime.
-
-Consider: Should this be a flywheel skill (`/flywheel-permissions`) or a standalone tool?
+- Hook script location: `~/.claude/hooks/` (symlinked from telegram-integration)
+- Current hook config is in `~/.claude/settings.local.json` under the `hooks` key
+- Permission format examples: `Read(~/path/**)`, `Bash(git status:*)`, `Edit(~/path/**)`
+- The JSONL format allows easy append-only logging and line-by-line processing
+- Related work item: `handle-initial-permission-on-new-worktre-128` (initial trust for new worktrees)
 
 ## Execution Log
 
-- 2026-01-26T14:00:00Z Work item created
-- 2026-01-26T14:05:00Z Updated approach: collect and manage permissions, not auto-allow
+- 2026-01-27 Work item created
+- 2026-01-27 Goals defined, success criteria added

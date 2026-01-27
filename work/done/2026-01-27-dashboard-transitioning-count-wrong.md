@@ -4,7 +4,7 @@
 - id: dashboard-transitioning-count-wrong-321
 - project: personal/flywheel-gsd
 - created: 2026-01-27
-- status: planned
+- status: done
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-dashboard-transitioning-count-wrong-321
 - assigned-session:
@@ -20,12 +20,12 @@ The dashboard transitioning count was showing 5 when only 1 item was actually tr
 
 ## Success Criteria
 
-- [ ] `getAllTransitioning()` validates each marker against its work item: if the work item doesn't exist, the marker is automatically cleaned up
-- [ ] `getAllTransitioning()` validates consistency: if the work item's current status differs from the marker's `previousStatus`, the marker is cleaned up
-- [ ] Prompt file dedup uses the actual work item ID from the markdown metadata (reading the `id:` field) rather than deriving it from the filename
-- [ ] No type errors (`npm run typecheck`)
-- [ ] No lint errors (`npm run lint`)
-- [ ] Dashboard shows correct transitioning count after fix
+- [x] `getAllTransitioning()` validates each marker against its work item: if the work item doesn't exist, the marker is automatically cleaned up
+- [x] `getAllTransitioning()` validates consistency: if the work item's current status differs from the marker's `previousStatus`, the marker is cleaned up
+- [x] Prompt file dedup uses the actual work item ID from the markdown metadata (reading the `id:` field) rather than deriving it from the filename
+- [x] No type errors (`npm run typecheck`)
+- [x] No lint errors (`npm run lint`)
+- [x] Dashboard shows correct transitioning count after fix
 
 ## Implementation Plan
 
@@ -77,3 +77,10 @@ Only one file needs modification: `app/src/lib/transitioning.ts`.
 - 2026-01-27T13:48:52.380Z Work item created
 - 2026-01-27T14:56:00.000Z Goals defined, success criteria added
 - 2026-01-27T15:00:00.000Z Implementation plan created
+- 2026-01-27T15:01:00.000Z Implemented marker validation and prompt file dedup fix in transitioning.ts
+- 2026-01-27T15:01:30.000Z TypeScript and lint checks pass
+- 2026-01-27T15:02:00.000Z Browser verification: dashboard shows "1 transitioning" (correct), stale markers cleaned up
+- 2026-01-27T15:02:00.000Z All success criteria verified, ready for /flywheel-done
+- 2026-01-27T15:03:00.000Z Committed and pushed
+- 2026-01-27T15:03:00.000Z PR created: https://github.com/btcsellis/Flywheel.GSD/pull/14
+- 2026-01-27T15:03:00.000Z Work item completed
