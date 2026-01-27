@@ -206,21 +206,16 @@ Run `/flywheel-execute` to implement the plan.
 
 After reporting the plan, check if the work item should proceed automatically.
 
-**Check conditions:**
+**Check condition:**
 1. Work item has `- unattended: true` in metadata
-2. Work item has `- workflow: main` (unattended only supported for main workflow in v1)
 
 ```bash
 # Check for unattended flag
 grep -q "^- unattended: true" "$WORK_ITEM_PATH"
 UNATTENDED=$?
-
-# Check for main workflow
-grep -q "^- workflow: main" "$WORK_ITEM_PATH"
-MAIN_WORKFLOW=$?
 ```
 
-**If both conditions are met (unattended mode):**
+**If unattended mode is set ($UNATTENDED == 0):**
 - Do NOT show "Run `/flywheel-execute`" in Next Steps
 - Instead, immediately invoke `/flywheel-execute` using the Skill tool:
 
