@@ -211,12 +211,14 @@ async function copyClaudeSettingsForWorktree(
 }
 
 /**
- * Pre-approve workspace trust for a worktree in ~/.claude.json.
+ * Pre-approve workspace trust for a worktree in .claude.json.
+ * Writes to CLAUDE_CONFIG_DIR/.claude.json if set, otherwise ~/.claude.json.
  * This sets hasTrustDialogAccepted=true so Claude Code doesn't prompt
  * "Do you trust the files in this folder?" when launching in the worktree.
  */
 async function preApproveWorktreeTrust(worktreePath: string): Promise<void> {
-  const claudeJsonPath = path.join(os.homedir(), '.claude.json');
+  const configDir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir());
+  const claudeJsonPath = path.join(configDir, '.claude.json');
 
   try {
     let data: Record<string, unknown> = {};
