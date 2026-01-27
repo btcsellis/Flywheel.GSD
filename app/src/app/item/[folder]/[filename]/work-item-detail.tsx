@@ -483,15 +483,30 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
       </div>
 
       <div className="space-y-8">
-        {/* Title */}
-        <div>
+        {/* Title + Save/Cancel */}
+        <div className="flex items-center gap-3">
           <input
             type="text"
             value={formData.title}
             onChange={e => setFormData({ ...formData, title: e.target.value })}
-            className={`w-full text-2xl font-bold bg-transparent border-none outline-none ${formData.important ? 'text-red-400 placeholder-red-400/50' : 'text-zinc-100 placeholder-zinc-600'}`}
+            className={`flex-1 text-2xl font-bold bg-transparent border-none outline-none ${formData.important ? 'text-red-400 placeholder-red-400/50' : 'text-zinc-100 placeholder-zinc-600'}`}
             placeholder="Work item title"
           />
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 bg-zinc-100 text-zinc-900 rounded font-medium text-sm hover:bg-white transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <Link
+              href="/"
+              className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded font-medium text-sm hover:border-zinc-700 hover:text-zinc-300 transition-colors"
+            >
+              Cancel
+            </Link>
+          </div>
         </div>
 
         {/* Status Stepper */}
@@ -923,31 +938,19 @@ export function WorkItemDetail({ item }: { item: WorkItem }) {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-zinc-800">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 bg-zinc-100 text-zinc-900 rounded font-medium text-sm hover:bg-white transition-colors disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save'}
-          </button>
-          <Link
-            href="/"
-            className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded font-medium text-sm hover:border-zinc-700 hover:text-zinc-300 transition-colors"
-          >
-            Cancel
-          </Link>
-          {formData.status !== 'done' && (
+        {/* Delete */}
+        {formData.status !== 'done' && (
+          <div className="pt-4 border-t border-zinc-800">
             <button
               onClick={() => setShowDeleteDialog(true)}
               disabled={deleting}
-              className="ml-auto px-4 py-2 bg-red-900/30 border border-red-800/50 text-red-400 rounded font-medium text-sm hover:bg-red-900/50 hover:border-red-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-red-900/30 border border-red-800/50 text-red-400 rounded font-medium text-sm hover:bg-red-900/50 hover:border-red-700 transition-colors disabled:opacity-50"
             >
               Delete
             </button>
-          )}
-        </div>
+          </div>
+        )}
+
       </div>
 
       {/* Delete Confirmation Dialog */}
