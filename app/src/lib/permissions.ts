@@ -224,7 +224,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
   },
 ];
 
-const GLOBAL_SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
+const GLOBAL_SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.local.json');
 
 function getAreaSettingsPath(areaValue: string): string {
   return path.join(os.homedir(), `.claude-${areaValue}`, 'settings.local.json');

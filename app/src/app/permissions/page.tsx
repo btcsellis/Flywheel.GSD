@@ -295,7 +295,7 @@ export default function PermissionsPage() {
         <h1 className="text-2xl font-bold text-zinc-100">Permissions</h1>
         <p className="text-sm text-zinc-500 mt-1">
           Configure Claude Code auto-permissions for each project. Changes are saved immediately to
-          each project&apos;s <code className="text-zinc-400">.claude/settings.json</code>.
+          each project&apos;s <code className="text-zinc-400">.claude/settings.local.json</code>.
           Global permissions apply to all projects.
         </p>
       </div>
