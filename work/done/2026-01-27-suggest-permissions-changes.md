@@ -4,7 +4,7 @@
 - id: suggest-permissions-changes-827
 - project: personal/flywheel-gsd
 - created: 2026-01-27
-- status: review
+- status: done
 - workflow: main
 - tmux-session: flywheel-gsd
 - assigned-session:
@@ -52,3 +52,5 @@ Remove: absolute-path git commands, `[ -f PLAN.md ]`, `flywheel-ship`, `printf:*
 - 2026-01-27 Updated dashboard description text to reference settings.local.json
 - 2026-01-27 All success criteria verified
 - 2026-01-27 Ready for /flywheel-done
+- 2026-01-27 Committed and pushed to main (9ea1c3b)
+- 2026-01-27 Work item completed
