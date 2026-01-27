@@ -26,15 +26,15 @@ export default async function ArchivePage() {
     <div>
       <header className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">Archive</h1>
-        <p className="text-sm text-zinc-500 mt-1">
+        <p className="text-sm text-zinc-400 mt-1">
           {items.length} completed work items
         </p>
       </header>
 
       {items.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-zinc-500">No completed work items yet.</p>
-          <p className="text-zinc-600 text-sm mt-1">Ship some work to see it here.</p>
+          <p className="text-zinc-400">No completed work items yet.</p>
+          <p className="text-zinc-500 text-sm mt-1">Ship some work to see it here.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -44,7 +44,7 @@ export default async function ArchivePage() {
 
             return (
               <div key={month}>
-                <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">
+                <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">
                   {monthName}
                 </h2>
                 <div className="space-y-2">
@@ -87,7 +87,7 @@ function ArchiveCard({ item }: { item: WorkItem }) {
             <p className="font-medium text-zinc-200 group-hover:text-white transition-colors">
               {item.title}
             </p>
-            <div className="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+            <div className="flex items-center gap-3 mt-1 text-xs text-zinc-400">
               <span style={{ color: accent }}>{item.metadata.project}</span>
               <span>•</span>
               <span>{item.metadata.created}</span>
@@ -103,7 +103,7 @@ function ArchiveCard({ item }: { item: WorkItem }) {
         </div>
 
         {item.successCriteria.length > 0 && (
-          <div className="mt-2 text-xs text-zinc-500">
+          <div className="mt-2 text-xs text-zinc-400">
             {item.successCriteria.filter(c => c.completed).length}/{item.successCriteria.length} criteria completed
           </div>
         )}

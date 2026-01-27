@@ -175,11 +175,11 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
         {/* Stats */}
         <div className="mb-6 flex items-center gap-4 text-sm text-zinc-400">
           <span>{allItems.length} items</span>
-          <span className="text-zinc-600">|</span>
+          <span className="text-zinc-500">|</span>
           <span className="text-emerald-400">{allItems.filter(i => i.metadata.status === 'planned').length} planned</span>
           {transitioningIds.size > 0 && (
             <>
-              <span className="text-zinc-600">|</span>
+              <span className="text-zinc-500">|</span>
               <span className="text-blue-400">{transitioningIds.size} transitioning</span>
             </>
           )}
@@ -197,7 +197,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
                   className="p-3 bg-zinc-900"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-[14px] text-zinc-500 tabular-nums">
+                    <span className="text-[14px] text-zinc-400 tabular-nums">
                       {num}
                     </span>
                     <span className="text-sm font-medium text-zinc-300 uppercase tracking-wider">
@@ -230,7 +230,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
                     >
                       {label}
                     </span>
-                    <span className="text-[13px] text-zinc-500">
+                    <span className="text-[13px] text-zinc-400">
                       {totalInArea} {totalInArea === 1 ? 'item' : 'items'}
                     </span>
                   </div>
@@ -238,7 +238,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
                   {/* Project Sub-Swimlanes */}
                   {projects.length === 0 ? (
                     <div className="grid grid-cols-[160px_repeat(4,1fr)] gap-px bg-zinc-800">
-                      <div className="p-3 text-zinc-600 text-sm italic bg-zinc-950/50">
+                      <div className="p-3 text-zinc-500 text-sm italic bg-zinc-950/50">
                         No items
                       </div>
                       {WORKFLOW_STEPS.map(({ status }, stepIndex) => (
@@ -272,7 +272,7 @@ export function DashboardClient({ initialBacklog, initialActive }: DashboardClie
                                 >
                                   {projectName}
                                 </span>
-                                <span className="text-[12px] text-zinc-500">
+                                <span className="text-[12px] text-zinc-400">
                                   {projectTotal} {projectTotal === 1 ? 'item' : 'items'}
                                 </span>
                               </div>

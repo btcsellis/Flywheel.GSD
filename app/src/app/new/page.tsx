@@ -64,7 +64,7 @@ function AutoResizeTextarea({
 
 export default function NewWorkItemPage() {
   return (
-    <Suspense fallback={<div className="text-zinc-500">Loading...</div>}>
+    <Suspense fallback={<div className="text-zinc-400">Loading...</div>}>
       <NewWorkItemContent />
     </Suspense>
   );
@@ -233,7 +233,7 @@ function NewWorkItemContent() {
   return (
     <div className="max-w-3xl">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-zinc-500 mb-6">
+      <div className="flex items-center gap-2 text-xs text-zinc-400 mb-6">
         <Link href="/" className="hover:text-zinc-300 transition-colors">Board</Link>
         <span>/</span>
         <span className="text-zinc-400">New Work Item</span>
@@ -255,7 +255,7 @@ function NewWorkItemContent() {
         {/* Metadata Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-zinc-900 rounded border border-zinc-800">
           <div>
-            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider mb-1">
               Area
             </label>
             <select
@@ -273,7 +273,7 @@ function NewWorkItemContent() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider mb-1">
               Project
             </label>
             <select
@@ -302,7 +302,7 @@ function NewWorkItemContent() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider mb-1">
               Due Date
             </label>
             <input
@@ -341,7 +341,7 @@ function NewWorkItemContent() {
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Description
           </label>
           <AutoResizeTextarea
@@ -355,10 +355,10 @@ function NewWorkItemContent() {
 
         {/* Success Criteria */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
             Success Criteria
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Specific, verifiable outcomes that define when this work is complete.</p>
+          <p className="text-[11px] text-zinc-500 mb-2">Specific, verifiable outcomes that define when this work is complete.</p>
           <div className="space-y-2">
             {criteria.map((criterion, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -379,7 +379,7 @@ function NewWorkItemContent() {
                   <button
                     type="button"
                     onClick={() => removeCriterion(index)}
-                    className="px-2 py-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                    className="px-2 py-2 text-zinc-500 hover:text-zinc-400 transition-colors"
                   >
                     ×
                   </button>
@@ -398,14 +398,14 @@ function NewWorkItemContent() {
 
         {/* Plan */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-            Plan <span className="text-zinc-600 normal-case">(optional)</span>
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+            Plan <span className="text-zinc-500 normal-case">(optional)</span>
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Ordered steps to accomplish this work. Claude Code will follow these.</p>
+          <p className="text-[11px] text-zinc-500 mb-2">Ordered steps to accomplish this work. Claude Code will follow these.</p>
           <div className="space-y-2">
             {plan.map((step, index) => (
               <div key={index} className="flex items-center gap-2">
-                <span className="text-xs text-zinc-600 w-6">{index + 1}.</span>
+                <span className="text-xs text-zinc-500 w-6">{index + 1}.</span>
                 <input
                   type="text"
                   value={step}
@@ -417,7 +417,7 @@ function NewWorkItemContent() {
                   <button
                     type="button"
                     onClick={() => removePlanStep(index)}
-                    className="px-2 py-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                    className="px-2 py-2 text-zinc-500 hover:text-zinc-400 transition-colors"
                   >
                     ×
                   </button>
@@ -436,10 +436,10 @@ function NewWorkItemContent() {
 
         {/* Verification */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-            Verification <span className="text-zinc-600 normal-case">(optional)</span>
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+            Verification <span className="text-zinc-500 normal-case">(optional)</span>
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">How to verify each success criterion is met. Commands, tests, manual checks.</p>
+          <p className="text-[11px] text-zinc-500 mb-2">How to verify each success criterion is met. Commands, tests, manual checks.</p>
           <AutoResizeTextarea
             value={verification}
             onChange={setVerification}
@@ -451,10 +451,10 @@ function NewWorkItemContent() {
 
         {/* Context */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-            Context <span className="text-zinc-600 normal-case">(optional)</span>
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+            Context <span className="text-zinc-500 normal-case">(optional)</span>
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Background info, dependencies, related issues, links, architectural decisions.</p>
+          <p className="text-[11px] text-zinc-500 mb-2">Background info, dependencies, related issues, links, architectural decisions.</p>
           <AutoResizeTextarea
             value={context}
             onChange={setContext}
@@ -466,10 +466,10 @@ function NewWorkItemContent() {
 
         {/* Files */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-            Files <span className="text-zinc-600 normal-case">(optional)</span>
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+            Files <span className="text-zinc-500 normal-case">(optional)</span>
           </label>
-          <p className="text-[11px] text-zinc-600 mb-2">Key files to modify or review. Helps Claude Code focus.</p>
+          <p className="text-[11px] text-zinc-500 mb-2">Key files to modify or review. Helps Claude Code focus.</p>
           <div className="space-y-2">
             {files.map((file, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -483,7 +483,7 @@ function NewWorkItemContent() {
                 <button
                   type="button"
                   onClick={() => removeFile(index)}
-                  className="px-2 py-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                  className="px-2 py-2 text-zinc-500 hover:text-zinc-400 transition-colors"
                 >
                   ×
                 </button>
@@ -501,8 +501,8 @@ function NewWorkItemContent() {
 
         {/* Notes */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-            Notes <span className="text-zinc-600 normal-case">(optional)</span>
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">
+            Notes <span className="text-zinc-500 normal-case">(optional)</span>
           </label>
           <AutoResizeTextarea
             value={notes}

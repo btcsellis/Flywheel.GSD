@@ -151,7 +151,7 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
             {actionLabel}
           </div>
 
-          <div className="px-3 py-2 text-xs text-zinc-500 border-b border-zinc-700/50">
+          <div className="px-3 py-2 text-xs text-zinc-400 border-b border-zinc-700/50">
             Choose workflow type:
           </div>
           <button
@@ -160,7 +160,7 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
             className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors disabled:opacity-50"
           >
             <div className="text-sm text-zinc-300">Main Branch</div>
-            <div className="text-xs text-zinc-500">Work directly on main, commit & sync</div>
+            <div className="text-xs text-zinc-400">Work directly on main, commit & sync</div>
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleSelectWorkflow('worktree'); }}
@@ -168,7 +168,7 @@ export function LaunchButton({ folder, filename, status, existingWorkflow, itemI
             className="w-full px-3 py-2 text-left hover:bg-zinc-700 transition-colors border-t border-zinc-700/50 disabled:opacity-50"
           >
             <div className="text-sm text-zinc-300">New Worktree</div>
-            <div className="text-xs text-zinc-500">Isolated branch, creates PR on ship</div>
+            <div className="text-xs text-zinc-400">Isolated branch, creates PR on ship</div>
           </button>
         </div>
       )}
