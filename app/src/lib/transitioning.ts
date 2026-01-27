@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { getAllWorkItems } from './work-items';
 
 const FLYWHEEL_PATH = process.env.FLYWHEEL_GSD_PATH || path.join(process.env.HOME || '', 'personal', 'flywheel-gsd');
 
@@ -52,20 +53,40 @@ export async function isTransitioning(id: string): Promise<TransitioningState | 
 }
 
 /**
- * Get all currently transitioning work items
- * Checks both explicit .flywheel-transitioning-{id} files and .flywheel-prompt-{project}.txt files
+ * Get all currently transitioning work items.
+ * Checks both explicit .flywheel-transitioning-{id} files and .flywheel-prompt-{project}.txt files.
+ * Validates markers against actual work items and cleans up stale ones.
  */
 export async function getAllTransitioning(): Promise<TransitioningState[]> {
   try {
     const files = await fs.readdir(FLYWHEEL_PATH);
     const states: TransitioningState[] = [];
 
+    // Load all work items for validation
+    const { backlog, active, done } = await getAllWorkItems();
+    const allWorkItems = [...backlog, ...active, ...done];
+
     // Check explicit transitioning marker files
     const transitioningFiles = files.filter(f => f.startsWith('.flywheel-transitioning-'));
     for (const file of transitioningFiles) {
       try {
         const content = await fs.readFile(path.join(FLYWHEEL_PATH, file), 'utf-8');
-        states.push(JSON.parse(content) as TransitioningState);
+        const state = JSON.parse(content) as TransitioningState;
+
+        const workItem = allWorkItems.find(item => item.metadata.id === state.id);
+        if (!workItem) {
+          // Work item doesn't exist — stale marker, clean up
+          await fs.unlink(path.join(FLYWHEEL_PATH, file)).catch(() => {});
+          continue;
+        }
+
+        if (workItem.metadata.status !== state.previousStatus) {
+          // Status changed since marker was created — transition complete, clean up
+          await fs.unlink(path.join(FLYWHEEL_PATH, file)).catch(() => {});
+          continue;
+        }
+
+        states.push(state);
       } catch {
         // Skip invalid files
       }
@@ -75,25 +96,34 @@ export async function getAllTransitioning(): Promise<TransitioningState[]> {
     const promptFiles = files.filter(f => f.startsWith('.flywheel-prompt-') && f.endsWith('.txt'));
     for (const file of promptFiles) {
       try {
-        const content = await fs.readFile(path.join(FLYWHEEL_PATH, file), 'utf-8');
-        // Parse the prompt file to get work item ID
-        const idMatch = content.match(/Work item file:.*\/([^/]+)\.md/);
-        const statusMatch = content.match(/Current Status:\s*(\w+)/);
+        const promptContent = await fs.readFile(path.join(FLYWHEEL_PATH, file), 'utf-8');
+        const filePathMatch = promptContent.match(/Work item file:\s*(.+\.md)/);
+        const statusMatch = promptContent.match(/Current Status:\s*(\w+)/);
 
-        if (idMatch) {
-          // Extract ID from filename
-          const workItemFilename = idMatch[1];
-          // Parse ID from the markdown metadata in work item (id: xxx)
-          const idFromFilename = workItemFilename.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+        if (filePathMatch) {
+          // Read the actual work item file to get the real ID
+          let workItemId: string | null = null;
+          try {
+            const workItemContent = await fs.readFile(filePathMatch[1].trim(), 'utf-8');
+            const idMatch = workItemContent.match(/^- id:\s*(.+)$/m);
+            if (idMatch) {
+              workItemId = idMatch[1].trim();
+            }
+          } catch {
+            // Work item file doesn't exist, skip this prompt
+            continue;
+          }
 
-          // Check if we already have this ID from transitioning files
-          const existingState = states.find(s => s.id === idFromFilename || workItemFilename.includes(s.id));
-          if (!existingState) {
-            states.push({
-              id: idFromFilename,
-              previousStatus: statusMatch?.[1] || 'unknown',
-              startedAt: new Date().toISOString(),
-            });
+          if (workItemId) {
+            // Dedup against existing states using the real ID
+            const existingState = states.find(s => s.id === workItemId);
+            if (!existingState) {
+              states.push({
+                id: workItemId,
+                previousStatus: statusMatch?.[1] || 'unknown',
+                startedAt: new Date().toISOString(),
+              });
+            }
           }
         }
       } catch {
