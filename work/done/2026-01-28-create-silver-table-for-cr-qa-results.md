@@ -36,7 +36,7 @@ We just created the bronze table, now let's create silver in the same lakehouse:
 - [x] Primary key defined for MERGE operations (likely `contact_record_id` + QA type + QA identifier)
 - [x] Notebook follows existing patterns: `nb_bronze_to_silver_cr_qa_results.Notebook`
 - [x] Silver audit columns added: `silver_processed_timestamp`, `source_table`, `silver_version`
-- [ ] Notebook runs successfully in Fabric with no errors
+- [x] Notebook runs successfully in Fabric with no errors
 
 ## Implementation Plan
 
@@ -158,3 +158,13 @@ After notebook runs in Fabric:
 - 2026-01-28T15:20:00.000Z Committed: ab3ba8e feat: add silver layer notebook for CR QA results
 - 2026-01-28T15:20:30.000Z Pushed to main
 - 2026-01-28T15:21:00.000Z Work item completed
+- 2026-01-28T16:08:00.000Z Bug fix: AnalysisException in Phase 2 transformation
+  - Issue: withColumn() failed because columns didn't exist in target df
+  - Fix: Changed to build select_exprs list and use select() instead
+  - Committed: 8b3e18d fix: resolve AnalysisException in silver transformation
+- 2026-01-28T16:10:49.000Z Notebook executed successfully in Fabric:
+  - 2,467 records loaded to silver.cr_qa_results
+  - 1,254 unique contact records
+  - 2 QA types: Data (1,246), General (1,221)
+  - All data quality checks passed
+  - All success criteria verified
