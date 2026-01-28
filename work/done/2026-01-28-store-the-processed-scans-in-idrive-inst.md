@@ -4,7 +4,7 @@
 - id: store-the-processed-scans-in-idrive-inst-689
 - project: personal/paper-yuck
 - created: 2026-01-28
-- status: review
+- status: done
 - unattended: true
 - workflow: main
 - tmux-session: paper-yuck
@@ -103,3 +103,14 @@ Key changes:
 - 2026-01-28T16:31:31.065Z Work item created
 - 2026-01-28T16:32:00.000Z Goals defined, success criteria added
 - 2026-01-28T16:33:00.000Z Implementation plan created
+- 2026-01-28T16:34:00.000Z Phase 1: Updated config.py - new default paths, removed archive settings
+- 2026-01-28T16:34:30.000Z Phase 2: Updated processor.py - removed archive logic
+- 2026-01-28T16:35:00.000Z Phase 3: Updated models.py - removed archive_path field
+- 2026-01-28T16:35:30.000Z Phase 4: Updated cli.py - removed archive from status display
+- 2026-01-28T16:36:00.000Z Phase 5: Updated CLAUDE.md documentation
+- 2026-01-28T16:36:30.000Z Verification: pytest passed (8 tests), all imports successful
+- 2026-01-28T16:37:00.000Z All success criteria verified
+- 2026-01-28T16:37:00.000Z Ready for /flywheel-done
+- 2026-01-28T16:38:00.000Z Committed: 3980bd8
+- 2026-01-28T16:38:00.000Z Pushed to main
+- 2026-01-28T16:38:00.000Z Work item completed
