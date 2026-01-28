@@ -124,7 +124,7 @@ export default function PermissionsPage() {
         ? [...permissions.globalEnabled, rule]
         : permissions.globalEnabled.filter((r) => r !== rule);
 
-      // Optimistic update: update global AND all area rules (backend writes to all 4 locations)
+      // Optimistic update: update global, all area rules, AND all projects (backend cascades to all)
       setPermissions((prev) => {
         if (!prev) return prev;
         const newAreaEnabled = { ...prev.areaEnabled };
@@ -144,7 +144,17 @@ export default function PermissionsPage() {
             if (newDrift[area].length === 0) delete newDrift[area];
           }
         }
-        return { ...prev, globalEnabled: newGlobalEnabled, areaEnabled: newAreaEnabled, drift: newDrift };
+        // Update all projects' enabledRules
+        const newProjects = prev.projects.map((project) => {
+          if (enabled) {
+            return project.enabledRules.includes(rule)
+              ? project
+              : { ...project, enabledRules: [...project.enabledRules, rule] };
+          } else {
+            return { ...project, enabledRules: project.enabledRules.filter((r) => r !== rule) };
+          }
+        });
+        return { ...prev, globalEnabled: newGlobalEnabled, areaEnabled: newAreaEnabled, drift: newDrift, projects: newProjects };
       });
 
       try {
@@ -185,12 +195,22 @@ export default function PermissionsPage() {
         ? [...currentAreaRules, rule]
         : currentAreaRules.filter((r) => r !== rule);
 
-      // Optimistic update
-      setPermissions((prev) =>
-        prev
-          ? { ...prev, areaEnabled: { ...prev.areaEnabled, [areaValue]: newAreaRules } }
-          : prev
-      );
+      // Optimistic update: update area AND projects in that area (backend cascades to projects)
+      setPermissions((prev) => {
+        if (!prev) return prev;
+        // Update projects in this area
+        const newProjects = prev.projects.map((project) => {
+          if (project.area !== areaValue) return project;
+          if (enabled) {
+            return project.enabledRules.includes(rule)
+              ? project
+              : { ...project, enabledRules: [...project.enabledRules, rule] };
+          } else {
+            return { ...project, enabledRules: project.enabledRules.filter((r) => r !== rule) };
+          }
+        });
+        return { ...prev, areaEnabled: { ...prev.areaEnabled, [areaValue]: newAreaRules }, projects: newProjects };
+      });
 
       try {
         const res = await fetch('/api/permissions/rule', {
@@ -461,8 +481,6 @@ export default function PermissionsPage() {
                                 <Checkbox
                                   checked={isAreaEnabled}
                                   onChange={(checked) => toggleAreaRule(area, rule, checked)}
-                                  disabled={isGlobalEnabled}
-                                  disabledChecked={isGlobalEnabled}
                                 />
                                 {hasDrift && (
                                   <span title="Missing from area — set globally but not synced">
@@ -476,7 +494,6 @@ export default function PermissionsPage() {
                         ...projects.map((project) => {
                           const isProjectEnabled = project.enabledRules.includes(rule);
                           const isSavingProject = saving === `${project.projectPath}-${rule}`;
-                          const isDisabledByParent = isGlobalEnabled || isAreaEnabled;
 
                           return (
                             <td key={project.projectPath} className="p-3 text-center">
@@ -489,8 +506,6 @@ export default function PermissionsPage() {
                                     onChange={(checked) =>
                                       toggleProjectRule(project.projectPath, rule, checked)
                                     }
-                                    disabled={isDisabledByParent}
-                                    disabledChecked={isDisabledByParent}
                                   />
                                 )}
                               </div>

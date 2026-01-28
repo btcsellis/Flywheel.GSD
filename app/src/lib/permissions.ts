@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+import { AREAS, discoverProjectsInArea } from './projects';
 
 export const AREA_VALUES = ['personal', 'bellwether', 'sophia'] as const;
 export type AreaValue = (typeof AREA_VALUES)[number];
@@ -584,6 +585,20 @@ export async function readAreaRawRules(areaValue: string): Promise<string[]> {
 }
 
 /**
+ * Sync a rule to all projects in an area.
+ * Called after writing to area settings so projects inherit the rule.
+ */
+async function syncRuleToAreaProjects(areaValue: string, rule: string, enabled: boolean): Promise<void> {
+  const area = AREAS.find((a) => a.value === areaValue);
+  if (!area) return;
+
+  const projects = await discoverProjectsInArea(area.basePath);
+  await Promise.all(
+    projects.map((project) => writeProjectRule(project.path, rule, enabled))
+  );
+}
+
+/**
  * Toggle a single rule in area settings
  */
 export async function writeAreaRule(areaValue: string, rule: string, enabled: boolean): Promise<void> {
@@ -618,6 +633,9 @@ export async function writeAreaRule(areaValue: string, rule: string, enabled: bo
   }
 
   await writeSettingsFile(settingsPath, newSettings);
+
+  // Cascade to all projects in this area
+  await syncRuleToAreaProjects(areaValue, rule, enabled);
 }
 
 /**
