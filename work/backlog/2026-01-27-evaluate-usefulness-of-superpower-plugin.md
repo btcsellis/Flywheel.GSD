@@ -4,7 +4,7 @@
 - id: evaluate-usefulness-of-superpower-plugin-122
 - project: personal/flywheel-gsd
 - created: 2026-01-27
-- status: defined
+- status: done
 - unattended: true
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-evaluate-usefulness-of-superpower-plugin-122
