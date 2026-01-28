@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { Check, Loader2, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import { Check, Loader2, AlertTriangle, ChevronRight, ChevronDown, Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AddRuleDialog } from '@/components/add-rule-dialog';
+import { Button } from '@/components/ui/button';
 
 interface ProjectRulesState {
   projectPath: string;
@@ -17,6 +19,14 @@ interface UnifiedPermissionsState {
   areaEnabled: Record<string, string[]>;
   projects: ProjectRulesState[];
   drift: Record<string, string[]>;
+  customCategories?: Record<string, Record<string, string>>;
+}
+
+interface EditingRule {
+  tool: string;
+  pattern: string | null;
+  category: string;
+  scope: string;
 }
 
 const AREA_COLORS: Record<string, string> = {
@@ -122,6 +132,37 @@ function categorizeRule(rule: string): Category {
   return 'Other';
 }
 
+// A set of known "built-in" rules (from PERMISSION_CATEGORIES in permissions.ts)
+// These are rules that come predefined and shouldn't show edit/delete buttons
+const BUILTIN_RULES = new Set([
+  'Read', 'Edit', 'Write',
+  'Bash(git status)', 'Bash(git status:*)', 'Bash(git log:*)', 'Bash(git diff:*)',
+  'Bash(git branch:*)', 'Bash(git show:*)',
+  'Bash(git add:*)', 'Bash(git commit:*)', 'Bash(git push)', 'Bash(git push:*)',
+  'Bash(git checkout:*)', 'Bash(git switch:*)', 'Bash(git merge:*)', 'Bash(git rebase:*)',
+  'Bash(git stash:*)', 'Bash(git worktree:*)',
+  'Bash(npm test:*)', 'Bash(npm run test:*)', 'Bash(npx jest:*)', 'Bash(pytest:*)',
+  'Bash(cargo test:*)', 'Bash(go test:*)',
+  'Bash(npm run build:*)', 'Bash(npx tsc:*)', 'Bash(tsc:*)', 'Bash(npx next build:*)',
+  'Bash(cargo build:*)', 'Bash(go build:*)',
+  'Bash(npm run lint:*)', 'Bash(npx eslint:*)', 'Bash(eslint:*)', 'Bash(npx prettier:*)',
+  'Bash(prettier:*)', 'Bash(npm run format:*)',
+  'Bash(npm list:*)', 'Bash(npm outdated:*)', 'Bash(npm info:*)', 'Bash(npm ls:*)',
+  'Bash(npm view:*)',
+  'Bash(npm install:*)', 'Bash(npm ci:*)', 'Bash(npm i:*)', 'Bash(pip install:*)',
+  'Bash(cargo add:*)', 'Bash(go get:*)',
+  'Bash(tmux:*)', 'Bash(tmux list-sessions:*)', 'Bash(tmux new-session:*)',
+  'Bash(tmux attach:*)', 'Bash(tmux kill-session:*)', 'Bash(tmux send-keys:*)',
+  'Bash(tmux has-session:*)',
+  'mcp__*', 'WebFetch', 'WebSearch',
+  'Skill(flywheel-define)', 'Skill(flywheel-plan)', 'Skill(flywheel-execute)',
+  'Skill(flywheel-done)', 'Skill(flywheel-new)',
+]);
+
+function isCustomRule(rule: string): boolean {
+  return !BUILTIN_RULES.has(rule);
+}
+
 /**
  * Parse a rule string into tool and pattern components
  */
@@ -191,6 +232,11 @@ export default function PermissionsPage() {
   // Collapse state for areas (columns) - start all collapsed
   const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
 
+  // Add rule dialog state
+  const [addRuleDialogOpen, setAddRuleDialogOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<EditingRule | null>(null);
+  const [deletingRule, setDeletingRule] = useState<{ rule: string; scope: string } | null>(null);
+
   const toggleCategory = useCallback((category: Category) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
@@ -215,22 +261,55 @@ export default function PermissionsPage() {
     });
   }, []);
 
-  useEffect(() => {
-    async function fetchPermissions() {
-      try {
-        const res = await fetch('/api/permissions');
-        if (!res.ok) throw new Error('Failed to fetch permissions');
-        const data = await res.json();
-        setPermissions(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load permissions');
-      } finally {
-        setLoading(false);
-      }
+  const fetchPermissions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/permissions');
+      if (!res.ok) throw new Error('Failed to fetch permissions');
+      const data = await res.json();
+      setPermissions(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load permissions');
+    } finally {
+      setLoading(false);
     }
-
-    fetchPermissions();
   }, []);
+
+  useEffect(() => {
+    fetchPermissions();
+  }, [fetchPermissions]);
+
+  const handleRuleAdded = useCallback(() => {
+    fetchPermissions();
+    setEditingRule(null);
+  }, [fetchPermissions]);
+
+  const handleEditRule = useCallback((rule: string, category: Category) => {
+    const { tool, pattern } = parseRule(rule);
+    setEditingRule({
+      tool,
+      pattern,
+      category,
+      scope: 'global', // Default to global for now
+    });
+    setAddRuleDialogOpen(true);
+  }, []);
+
+  const handleDeleteRule = useCallback(async (rule: string, scope: string) => {
+    setDeletingRule({ rule, scope });
+    try {
+      const res = await fetch('/api/permissions/rule', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rule, scope }),
+      });
+      if (!res.ok) throw new Error('Failed to delete rule');
+      await fetchPermissions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete rule');
+    } finally {
+      setDeletingRule(null);
+    }
+  }, [fetchPermissions]);
 
   const toggleGlobalRule = useCallback(
     async (rule: string, enabled: boolean) => {
@@ -517,13 +596,25 @@ export default function PermissionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Permissions</h1>
-        <p className="text-sm text-zinc-400 mt-1">
-          Configure Claude Code auto-permissions for each project. Changes are saved immediately to each
-          project&apos;s <code className="text-zinc-400">.claude/settings.local.json</code>. Global permissions
-          apply to all projects.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-100">Permissions</h1>
+          <p className="text-sm text-zinc-400 mt-1">
+            Configure Claude Code auto-permissions for each project. Changes are saved immediately to each
+            project&apos;s <code className="text-zinc-400">.claude/settings.local.json</code>. Global permissions
+            apply to all projects.
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            setEditingRule(null);
+            setAddRuleDialogOpen(true);
+          }}
+          className="bg-blue-600 hover:bg-blue-500 text-white"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Rule
+        </Button>
       </div>
 
       {/* Drift Warning Banner */}
@@ -660,18 +751,59 @@ export default function PermissionsPage() {
                       rules.map((rule, idx) => {
                         const isGlobalEnabled = globalEnabledSet.has(rule);
                         const isSavingGlobal = saving === `global-${rule}`;
+                        const isCustom = isCustomRule(rule);
+                        const isDeleting = deletingRule?.rule === rule;
 
                         return (
                           <tr
                             key={rule}
                             className={cn(
-                              'border-b border-zinc-800/50 hover:bg-zinc-800/30',
+                              'border-b border-zinc-800/50 hover:bg-zinc-800/30 group',
                               idx % 2 === 0 && 'bg-zinc-900/20'
                             )}
                           >
                             <td className="p-3 pl-8 sticky left-0 bg-inherit">
-                              <div className="text-sm font-mono text-zinc-200" title={rule}>
-                                {formatRule(rule)}
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-mono text-zinc-200" title={rule}>
+                                  {formatRule(rule)}
+                                </div>
+                                {isCustom && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-purple-900/40 text-purple-300 border border-purple-700/40 rounded">
+                                    <Sparkles className="h-2.5 w-2.5" />
+                                    custom
+                                  </span>
+                                )}
+                                {isCustom && (
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditRule(rule, category);
+                                      }}
+                                      className="p-1 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700/50 rounded transition-colors"
+                                      title="Edit rule"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm(`Delete rule "${rule}"?`)) {
+                                          handleDeleteRule(rule, 'global');
+                                        }
+                                      }}
+                                      disabled={isDeleting}
+                                      className="p-1 text-zinc-500 hover:text-red-400 hover:bg-red-900/30 rounded transition-colors disabled:opacity-50"
+                                      title="Delete rule"
+                                    >
+                                      {isDeleting ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td className="p-3 text-center">
@@ -760,6 +892,14 @@ export default function PermissionsPage() {
       </div>
 
       <div className="text-xs text-zinc-500">{permissions.allRules.length} rules total</div>
+
+      <AddRuleDialog
+        open={addRuleDialogOpen}
+        onOpenChange={setAddRuleDialogOpen}
+        existingRules={permissions.globalEnabled}
+        onRuleAdded={handleRuleAdded}
+        editingRule={editingRule}
+      />
     </div>
   );
 }

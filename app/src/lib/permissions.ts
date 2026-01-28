@@ -18,6 +18,7 @@ export interface ClaudeSettings {
     allow?: string[];
     deny?: string[];
   };
+  customCategories?: Record<string, string>;
   [key: string]: unknown;
 }
 
@@ -401,9 +402,10 @@ export async function writeGlobalPermissions(categoryIds: string[]): Promise<voi
 
       // Remove global rules that were disabled (were in previous global but not in new)
       const removedGlobalRules = [...previousGlobalRules].filter((r) => !globalRulesSet.has(r));
-      let updatedRules = areaRules.filter((r) => !removedGlobalRules.includes(r));
+      const filteredRules = areaRules.filter((r) => !removedGlobalRules.includes(r));
 
       // Add new global rules that aren't already present
+      const updatedRules = [...filteredRules];
       for (const rule of rules) {
         if (!updatedRules.includes(rule)) {
           updatedRules.push(rule);
@@ -788,5 +790,110 @@ export async function syncGlobalToAreas(): Promise<void> {
       await writeSettingsFile(settingsPath, newSettings);
     })
   );
+}
+
+// ============================================================================
+// Custom category storage functions
+// ============================================================================
+
+/**
+ * Get the settings file path for a given scope
+ */
+function getSettingsPathForScope(scope: string): string {
+  if (scope === 'global') {
+    return GLOBAL_SETTINGS_PATH;
+  } else if (scope.startsWith('area:')) {
+    const areaValue = scope.slice(5);
+    return getAreaSettingsPath(areaValue);
+  } else {
+    return getProjectSettingsPath(scope);
+  }
+}
+
+/**
+ * Write a custom category mapping for a rule
+ */
+export async function writeCustomCategory(
+  scope: string,
+  rule: string,
+  category: string
+): Promise<void> {
+  const settingsPath = getSettingsPathForScope(scope);
+  const existingSettings = (await readSettingsFile(settingsPath)) || {};
+
+  const customCategories = existingSettings.customCategories || {};
+  customCategories[rule] = category;
+
+  const newSettings: ClaudeSettings = {
+    ...existingSettings,
+    customCategories,
+  };
+
+  await writeSettingsFile(settingsPath, newSettings);
+}
+
+/**
+ * Delete a custom category mapping for a rule
+ */
+export async function deleteCustomCategory(
+  scope: string,
+  rule: string
+): Promise<void> {
+  const settingsPath = getSettingsPathForScope(scope);
+  const existingSettings = (await readSettingsFile(settingsPath)) || {};
+
+  if (!existingSettings.customCategories) {
+    return;
+  }
+
+  const customCategories = { ...existingSettings.customCategories };
+  delete customCategories[rule];
+
+  const newSettings: ClaudeSettings = {
+    ...existingSettings,
+  };
+
+  if (Object.keys(customCategories).length > 0) {
+    newSettings.customCategories = customCategories;
+  } else {
+    delete newSettings.customCategories;
+  }
+
+  await writeSettingsFile(settingsPath, newSettings);
+}
+
+/**
+ * Read all custom category mappings for a given scope
+ */
+export async function readCustomCategories(
+  scope: string
+): Promise<Record<string, string>> {
+  const settingsPath = getSettingsPathForScope(scope);
+  const settings = await readSettingsFile(settingsPath);
+  return settings?.customCategories || {};
+}
+
+/**
+ * Read custom categories from all scopes (global, areas, projects)
+ */
+export async function readAllCustomCategories(
+  projectPaths: string[]
+): Promise<Record<string, Record<string, string>>> {
+  const result: Record<string, Record<string, string>> = {};
+
+  // Global
+  result['global'] = await readCustomCategories('global');
+
+  // Areas
+  for (const area of AREA_VALUES) {
+    result[`area:${area}`] = await readCustomCategories(`area:${area}`);
+  }
+
+  // Projects
+  for (const projectPath of projectPaths) {
+    result[projectPath] = await readCustomCategories(projectPath);
+  }
+
+  return result;
 }
 
