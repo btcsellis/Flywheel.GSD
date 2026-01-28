@@ -5,7 +5,7 @@
 - project: sophia/Sophia.Fabric
 - priority: medium
 - created: 2026-01-28
-- status: defined
+- status: planned
 - workflow: main
 - tmux-session:
 - assigned-session:
@@ -51,6 +51,91 @@ Standardize on `gold` schema for gold tables across all tenant lakehouses.
 - [ ] `docs/patterns/cross-workspace-gold-table-writes.md` updated
 - [ ] `CLAUDE.md` cross-workspace section updated
 
+## Implementation Plan
+
+### Phase 1: Enable Schemas on LAUW Lakehouse
+
+1. **Enable schemas on LAUW via Fabric UI**
+   - Navigate to LAUW workspace → lh_lauw lakehouse → Settings
+   - Enable "Schemas" feature (if available)
+   - If not available via UI, may need to recreate lakehouse with schemas enabled
+   - Verification: `fab api "workspaces/.../lakehouses/..."` shows `defaultSchema`
+
+2. **Verify VIA LINK already schema-enabled**
+   - Already confirmed: has `defaultSchema: "dbo"`
+   - No action needed
+
+### Phase 2: Update Notebooks for `gold` Schema Path
+
+3. **Update `nb_silver_to_gold_cr_qa_results_vialink`**
+   - File: `pbisync/sophiadata/Notebooks/nb_silver_to_gold_cr_qa_results_vialink.Notebook/notebook-content.py`
+   - Change: `target_path = f"{ONELAKE_BASE}/Tables/dbo/{TARGET_TABLE_NAME}"`
+   - To: `target_path = f"{ONELAKE_BASE}/Tables/gold/{TARGET_TABLE_NAME}"`
+   - Also rename `TARGET_TABLE_NAME` from `gold_cr_qa_results` to `cr_qa_results` (schema provides the "gold" prefix)
+   - Verification: Run notebook, check table appears as `gold.cr_qa_results`
+
+4. **Update `nb_route_gold_resources_to_tenants`**
+   - File: `pbisync/sophiadata/nb_route_gold_resources_to_tenants.Notebook/notebook-content.py`
+   - Change: `full_path = f"{onelake_path}/{table_name}"`
+   - To: `full_path = f"{onelake_path}/gold/{table_name}"`
+   - Verification: Run notebook, check tables appear in `gold` schema
+
+### Phase 3: Migrate Existing Tables
+
+5. **Run updated VIA LINK notebook**
+   - Creates `gold.cr_qa_results` in VIA LINK lakehouse
+   - Old `dbo.gold_cr_qa_results` can be deleted manually after verification
+
+6. **Run updated routing notebook**
+   - Creates `gold.resources` (and other routed tables) in LAUW lakehouse
+   - Old flat `gold_resources` can be deleted manually after verification
+
+7. **Clean up old tables/folders** (manual via Fabric UI)
+   - VIA LINK: Delete `dbo.gold_cr_qa_results`, delete stray folders from earlier attempts
+   - LAUW: Delete flat `gold_resources`
+
+### Phase 4: Update Documentation
+
+8. **Update `docs/patterns/cross-workspace-gold-table-writes.md`**
+   - Remove schema-enabled vs non-schema distinction
+   - Standardize on `Tables/gold/{table}` pattern for all lakehouses
+   - Update examples to show `gold` schema path
+
+9. **Update `CLAUDE.md` cross-workspace section**
+   - Simplify to single pattern: `Tables/gold/{table}`
+   - Remove conditional logic for schema-enabled vs non-schema
+
+10. **Update notebook content to Fabric**
+    - Use `fab api` to update notebook definitions after local edits
+    - Sync via GitHub → Fabric
+
+### Files to Modify
+
+**Notebooks:**
+- `pbisync/sophiadata/Notebooks/nb_silver_to_gold_cr_qa_results_vialink.Notebook/notebook-content.py`
+- `pbisync/sophiadata/nb_route_gold_resources_to_tenants.Notebook/notebook-content.py`
+
+**Documentation:**
+- `docs/patterns/cross-workspace-gold-table-writes.md`
+- `CLAUDE.md`
+
+**No changes needed:**
+- `nb_seed_workspace_metadata.Notebook` - onelake_path still ends with `/Tables` (schema added by notebooks)
+
+### Verification
+
+After all changes:
+1. VIA LINK lakehouse shows `gold.cr_qa_results` table
+2. LAUW lakehouse shows `gold.resources` table (and other routed tables)
+3. No orphan tables in `dbo` schema or flat naming
+4. Both notebooks run successfully
+5. Documentation reflects unified `Tables/gold/{table}` pattern
+
+### Dependencies
+
+- LAUW must have schemas enabled before routing notebook can write to `gold` schema
+- If schemas cannot be enabled on existing LAUW lakehouse, may need to recreate it
+
 ## Notes
 
 - Schema-enabled lakehouses align with SQL data warehouse conventions
@@ -58,8 +143,10 @@ Standardize on `gold` schema for gold tables across all tenant lakehouses.
 - Routing notebook benefits from consistent pattern across all targets
 - Reference: `docs/patterns/cross-workspace-gold-table-writes.md`
 - VIA LINK also has Amazon Connect tables in bronze/silver/gold - those use local writes, not cross-workspace
+- Writing to `Tables/gold/{table}` auto-creates the `gold` schema folder
 
 ## Execution Log
 
 - 2026-01-28T21:45:00.000Z Work item created
 - 2026-01-28T22:00:00.000Z Goals defined, success criteria added
+- 2026-01-28T22:15:00.000Z Implementation plan created
