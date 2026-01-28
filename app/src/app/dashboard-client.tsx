@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { LaunchButton } from '@/components/launch-button';
-import type { WorkItem, WorkItemStatus, WorkflowType } from '@/lib/work-items';
+import type { WorkItem, WorkItemStatus } from '@/lib/work-items';
 
 type Area = 'bellwether' | 'sophia' | 'personal';
 

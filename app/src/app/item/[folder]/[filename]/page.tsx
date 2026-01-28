@@ -1,4 +1,4 @@
-import { getWorkItem, type WorkItem, type WorkItemStatus } from '@/lib/work-items';
+import { getWorkItem } from '@/lib/work-items';
 import { notFound } from 'next/navigation';
 import { WorkItemDetail } from './work-item-detail';
 

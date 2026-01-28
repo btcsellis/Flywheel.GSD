@@ -139,8 +139,6 @@ function NewWorkItemContent() {
     fetchProjects();
   }, []);
 
-  const currentArea = AREAS.find(a => a.value === area);
-  const accent = currentArea?.color || '#6b7280';
   const projectOptions = (projects[area] || []).map(p => p.name);
 
   // Criterion handlers

@@ -361,18 +361,6 @@ export async function killTmuxSession(sessionName: string): Promise<boolean> {
   }
 }
 
-async function isClaudeRunningInSession(sessionName: string): Promise<boolean> {
-  try {
-    const { stdout } = await execAsync(
-      `tmux list-panes -t "${sessionName}" -F "#{pane_current_command}" 2>/dev/null`
-    );
-    const commands = stdout.trim().toLowerCase();
-    return commands.includes('claude') || commands.includes('node');
-  } catch {
-    return false;
-  }
-}
-
 export async function launchClaudeInITerm(config: LaunchConfig): Promise<LaunchResult> {
   const { projectPath, tmuxSessionName, initialPrompt, reuseSession = false, workflow, workItemId } = config;
 
