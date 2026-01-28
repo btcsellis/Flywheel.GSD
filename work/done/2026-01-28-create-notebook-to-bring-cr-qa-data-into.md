@@ -4,7 +4,7 @@
 - id: create-notebook-to-bring-cr-qa-data-into-896
 - project: sophia/Sophia.Fabric
 - created: 2026-01-28
-- status: planned
+- status: done
 - workflow: main
 - tmux-session: Sophia-Fabric
 - assigned-session:
@@ -21,13 +21,13 @@ Create a bronze ingestion notebook that copies CR QA result data from Azure Blob
 
 ## Success Criteria
 
-- [ ] Notebook `nb_bronze_cr_qa_results` exists and follows existing bronze patterns (audit columns, Delta write)
-- [ ] Reads JSON files from `cr-qa-results` blob container, traversing tenant/CR folder hierarchy
-- [ ] Writes to `Tables/bronze/cr_qa_results` in `lh_sophia_data` as Delta table
-- [ ] Supports incremental runs — does not re-process files already ingested
-- [ ] Handles the multi-tenant folder structure (tenant → CR → JSON files)
-- [ ] Deployed to Fabric via fabric-cli
-- [ ] No type errors or notebook execution failures
+- [x] Notebook `nb_bronze_cr_qa_results` exists and follows existing bronze patterns (audit columns, Delta write)
+- [x] Reads JSON files from `cr-qa-results` blob container, traversing tenant/CR folder hierarchy
+- [x] Writes to `Tables/bronze/cr_qa_results` in `lh_sophia_data` as Delta table
+- [x] Supports incremental runs — does not re-process files already ingested
+- [x] Handles the multi-tenant folder structure (tenant → CR → JSON files)
+- [x] Deployed to Fabric via fabric-cli
+- [x] No type errors or notebook execution failures
 
 ## Implementation Plan
 
@@ -49,11 +49,11 @@ Create a bronze ingestion notebook that copies CR QA result data from Azure Blob
 
 3. **Add cell 1: Configuration and imports**
    - Import pyspark functions, datetime, logging
-   - Define blob storage path: `abfss://cr-qa-results@sophiaprode1d873af7fc4.blob.core.windows.net/`
+   - Define shortcut path: `Files/cr-qa-results` (requires shortcut to blob container)
    - Define target table path: `Tables/bronze/cr_qa_results`
    - Verification: Constants defined, imports complete
 
-4. **Add cell 2: Read JSON files recursively from blob storage**
+4. **Add cell 2: Read JSON files recursively from shortcut**
    - Use `spark.read.json()` with `recursiveFileLookup=true`
    - Add `input_file_name()` to capture source file path
    - Extract tenant_id and contact_record_id from file path using regex
@@ -128,3 +128,10 @@ fab job run-status "Sophia All Tenants.Workspace/nb_bronze_cr_qa_results.Noteboo
 - 2026-01-28T14:19:00.000Z Switched to wasbs://, second test run failed: no credentials
 - 2026-01-28T14:22:00.000Z Updated notebook to use Lakehouse shortcut pattern (Files/cr-qa-results)
 - 2026-01-28T14:22:00.000Z BLOCKED: Need to create shortcut in lh_sophia_data Lakehouse
+- 2026-01-28T14:25:00.000Z User created shortcut "cr-qa-results" in lh_sophia_data Files section
+- 2026-01-28T14:26:00.000Z Re-imported notebook to Fabric
+- 2026-01-28T14:28:00.000Z Notebook execution COMPLETED successfully (job 0e3b203a-a5f1-460c-8a36-2b2a5da7defc)
+- 2026-01-28T14:28:30.000Z All success criteria verified
+- 2026-01-28T14:28:30.000Z Ready for /flywheel-done
+- 2026-01-28T14:32:00.000Z Committed and pushed to main (56234e9)
+- 2026-01-28T14:32:30.000Z Work item completed
