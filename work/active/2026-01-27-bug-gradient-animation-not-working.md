@@ -4,7 +4,7 @@
 - id: bug-gradient-animation-not-working-108
 - project: personal/flywheel-gsd
 - created: 2026-01-27
-- status: planned
+- status: review
 - unattended: true
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-bug-gradient-animation-not-working-108
@@ -22,12 +22,12 @@ The gradient animation on dashboard cards (indicating a work item is being activ
 
 ## Success Criteria
 
-- [ ] `getAllTransitioning()` detects `.flywheel-prompt-*.txt` files in worktree directories (not just FLYWHEEL_PATH)
-- [ ] Gradient animation appears on dashboard card during unattended skill chaining (define -> plan -> execute)
-- [ ] Each skill phase creates/updates its own transitioning marker with the correct `previousStatus`
-- [ ] No stale transitioning markers left after a skill completes its status transition
-- [ ] All existing tests pass
-- [ ] No type errors
+- [x] `getAllTransitioning()` detects `.flywheel-prompt-*.txt` files in worktree directories (not just FLYWHEEL_PATH)
+- [x] Gradient animation appears on dashboard card during unattended skill chaining (define -> plan -> execute)
+- [x] Each skill phase creates/updates its own transitioning marker with the correct `previousStatus`
+- [x] No stale transitioning markers left after a skill completes its status transition
+- [x] All existing tests pass
+- [x] No type errors
 
 ## Notes
 
@@ -83,3 +83,8 @@ The gradient animation on dashboard cards (indicating a work item is being activ
 - 2026-01-27T23:34:38.758Z Work item created
 - 2026-01-28T00:00:00.000Z Goals defined, success criteria added
 - 2026-01-28T00:01:00.000Z Implementation plan created
+- 2026-01-28T00:06:00.000Z Phase 1: Added worktree directory scanning to getAllTransitioning() in transitioning.ts
+- 2026-01-28T00:07:00.000Z Phase 2: Updated all 4 skill files to always create/update transitioning markers
+- 2026-01-28T00:08:00.000Z Build passes (next build) with no type errors
+- 2026-01-28T00:09:00.000Z Browser verification: dashboard shows "1 transitioning", worktree prompt file detected for superpower plugin item
+- 2026-01-28T00:10:00.000Z All success criteria verified, transitioning to review
