@@ -4,7 +4,7 @@
 - id: add-permissions-from-permissions-log-539
 - project: personal/flywheel-gsd
 - created: 2026-01-28
-- status: planned
+- status: done
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-add-permissions-from-permissions-log-539
 - assigned-session: 
@@ -23,19 +23,19 @@ On the permissions dashboard, add a section to show items from the permissions l
 
 ## Success Criteria
 
-- [ ] Permissions page displays entries from `permission-requests.jsonl`
-- [ ] Each log entry shows: tool, pattern/command, project, and timestamp
-- [ ] Log entries can be dismissed/removed without creating a rule
-- [ ] Clicking "Add Rule" on a log entry opens rule creation with pre-filled values
-- [ ] Scope selector shows project (default based on origin), area, and global options
-- [ ] For `*` patterns, suggests a specific path derived from the request's cwd or file_path
-- [ ] Creating a rule removes the log entry from the view (and from the JSONL file)
-- [ ] Dismissing an entry removes it from the view (and from the JSONL file)
-- [ ] API endpoint to read permission log entries
-- [ ] API endpoint to delete specific log entries
-- [ ] All existing tests pass
-- [ ] No TypeScript errors
-- [ ] No ESLint errors
+- [x] Permissions page displays entries from `permission-requests.jsonl`
+- [x] Each log entry shows: tool, pattern/command, project, and timestamp
+- [x] Log entries can be dismissed/removed without creating a rule
+- [x] Clicking "Add Rule" on a log entry opens rule creation with pre-filled values
+- [x] Scope selector shows project (default based on origin), area, and global options
+- [x] For `*` patterns, suggests a specific path derived from the request's cwd or file_path
+- [x] Creating a rule removes the log entry from the view (and from the JSONL file)
+- [x] Dismissing an entry removes it from the view (and from the JSONL file)
+- [x] API endpoint to read permission log entries
+- [x] API endpoint to delete specific log entries
+- [x] All existing tests pass (no test suite configured)
+- [x] No TypeScript errors
+- [x] No ESLint errors (only pre-existing warnings)
 
 
 ## Implementation Plan
@@ -136,3 +136,20 @@ On the permissions dashboard, add a section to show items from the permissions l
 - 2026-01-28T16:13:49.358Z Work item created
 - 2026-01-28T16:15:00.000Z Goals defined, success criteria added
 - 2026-01-28T16:30:00.000Z Implementation plan created
+- 2026-01-28T17:00:00.000Z Phase 1: Created API route `/api/permissions/log` with GET and DELETE endpoints
+- 2026-01-28T17:05:00.000Z Phase 2: Created client-safe helpers in `permission-log-helpers.ts`
+- 2026-01-28T17:10:00.000Z Phase 3: Created `PermissionLogSection` and `AddRuleFromLogDialog` components
+- 2026-01-28T17:15:00.000Z Phase 4: Integrated log section into permissions page
+- 2026-01-28T17:20:00.000Z Build successful, no TypeScript errors
+- 2026-01-28T17:22:00.000Z ESLint passed (only pre-existing warnings)
+- 2026-01-28T17:25:00.000Z Browser verification completed:
+  - Permission Requests section visible with 26 entries
+  - Log entries show timestamp, tool, command/pattern, project
+  - Dismiss (X) button removes entry from view and JSONL file
+  - Add Rule dialog opens with pre-filled values from log entry
+  - Scope selector shows project/area/global options with smart default
+- 2026-01-28T17:30:00.000Z All success criteria verified
+- 2026-01-28T17:30:00.000Z Ready for /flywheel-done
+- 2026-01-28T17:35:00.000Z Committed and pushed
+- 2026-01-28T17:35:00.000Z PR created: https://github.com/btcsellis/Flywheel.GSD/pull/24
+- 2026-01-28T17:36:00.000Z Work item completed
