@@ -4,7 +4,10 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Check, Loader2, AlertTriangle, ChevronRight, ChevronDown, Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddRuleDialog } from '@/components/add-rule-dialog';
+import { PermissionLogSection } from '@/components/permission-log-section';
+import { AddRuleFromLogDialog } from '@/components/add-rule-from-log-dialog';
 import { Button } from '@/components/ui/button';
+import type { PermissionLogEntry } from '@/lib/permission-log-helpers';
 
 interface ProjectRulesState {
   projectPath: string;
@@ -237,6 +240,12 @@ export default function PermissionsPage() {
   const [editingRule, setEditingRule] = useState<EditingRule | null>(null);
   const [deletingRule, setDeletingRule] = useState<{ rule: string; scope: string } | null>(null);
 
+  // Permission log state
+  const [logEntries, setLogEntries] = useState<PermissionLogEntry[]>([]);
+  const [logLoading, setLogLoading] = useState(true);
+  const [addRuleFromLogDialogOpen, setAddRuleFromLogDialogOpen] = useState(false);
+  const [selectedLogEntry, setSelectedLogEntry] = useState<PermissionLogEntry | null>(null);
+
   const toggleCategory = useCallback((category: Category) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
@@ -274,13 +283,56 @@ export default function PermissionsPage() {
     }
   }, []);
 
+  const fetchLogEntries = useCallback(async () => {
+    try {
+      setLogLoading(true);
+      const res = await fetch('/api/permissions/log');
+      if (!res.ok) throw new Error('Failed to fetch permission log');
+      const data = await res.json();
+      setLogEntries(data.entries || []);
+    } catch (err) {
+      console.error('Failed to fetch permission log:', err);
+    } finally {
+      setLogLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPermissions();
-  }, [fetchPermissions]);
+    fetchLogEntries();
+  }, [fetchPermissions, fetchLogEntries]);
 
   const handleRuleAdded = useCallback(() => {
     fetchPermissions();
     setEditingRule(null);
+  }, [fetchPermissions]);
+
+  const handleAddRuleFromLog = useCallback((entry: PermissionLogEntry) => {
+    setSelectedLogEntry(entry);
+    setAddRuleFromLogDialogOpen(true);
+  }, []);
+
+  const handleDismissLogEntry = useCallback(async (entryId: number) => {
+    try {
+      const res = await fetch('/api/permissions/log', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [entryId] }),
+      });
+      if (!res.ok) throw new Error('Failed to dismiss entry');
+      // Remove from local state
+      setLogEntries((prev) => prev.filter((e) => e.id !== entryId));
+    } catch (err) {
+      console.error('Failed to dismiss log entry:', err);
+    }
+  }, []);
+
+  const handleRuleAddedFromLog = useCallback((entryId: number) => {
+    // Remove the entry from local state
+    setLogEntries((prev) => prev.filter((e) => e.id !== entryId));
+    // Refresh permissions to show the new rule
+    fetchPermissions();
+    setSelectedLogEntry(null);
   }, [fetchPermissions]);
 
   const handleEditRule = useCallback((rule: string, category: Category) => {
@@ -617,6 +669,14 @@ export default function PermissionsPage() {
         </Button>
       </div>
 
+      {/* Permission Log Section */}
+      <PermissionLogSection
+        entries={logEntries}
+        loading={logLoading}
+        onAddRule={handleAddRuleFromLog}
+        onDismiss={handleDismissLogEntry}
+      />
+
       {/* Drift Warning Banner */}
       {totalDriftCount > 0 && (
         <div className="flex items-center justify-between gap-3 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
@@ -902,6 +962,14 @@ export default function PermissionsPage() {
         existingRules={permissions.globalEnabled}
         onRuleAdded={handleRuleAdded}
         editingRule={editingRule}
+      />
+
+      <AddRuleFromLogDialog
+        open={addRuleFromLogDialogOpen}
+        onOpenChange={setAddRuleFromLogDialogOpen}
+        entry={selectedLogEntry}
+        existingRules={permissions.allRules}
+        onRuleAdded={handleRuleAddedFromLog}
       />
     </div>
   );
