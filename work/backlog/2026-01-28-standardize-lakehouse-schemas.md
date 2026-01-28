@@ -32,9 +32,11 @@ Standardize on `gold` schema for gold tables across all tenant lakehouses.
 ## Success Criteria
 
 ### Lakehouse Configuration
-- [ ] LAUW lakehouse (lh_lauw) has schemas enabled
-- [ ] `gold` schema exists in VIA LINK lakehouse
-- [ ] `gold` schema exists in LAUW lakehouse
+- [ ] New LAUW lakehouse created with schemas enabled (via `fab mkdir -P enableSchemas=true`)
+- [ ] Old LAUW lakehouse data migrated and old lakehouse deleted
+- [ ] `workspace_metadata` updated with new LAUW lakehouse ID
+- [ ] `gold` schema exists in VIA LINK lakehouse (created by writing to `Tables/gold/`)
+- [ ] `gold` schema exists in LAUW lakehouse (created by writing to `Tables/gold/`)
 
 ### Table Migration
 - [ ] VIA LINK: `gold.cr_qa_results` exists (migrated from `dbo.gold_cr_qa_results`)
@@ -53,17 +55,35 @@ Standardize on `gold` schema for gold tables across all tenant lakehouses.
 
 ## Implementation Plan
 
-### Phase 1: Enable Schemas on LAUW Lakehouse
+### Phase 1: Recreate LAUW Lakehouse with Schemas Enabled
 
-1. **Enable schemas on LAUW via Fabric UI**
-   - Navigate to LAUW workspace → lh_lauw lakehouse → Settings
-   - Enable "Schemas" feature (if available)
-   - If not available via UI, may need to recreate lakehouse with schemas enabled
-   - Verification: `fab api "workspaces/.../lakehouses/..."` shows `defaultSchema`
+**Note:** Cannot enable schemas on existing lakehouses - must recreate. ([Microsoft Fabric Community](https://community.fabric.microsoft.com/t5/Fabric-platform/Can-we-enable-Lakehouse-Schemas-for-an-already-existing/m-p/4787569))
 
-2. **Verify VIA LINK already schema-enabled**
+1. **Create new LAUW lakehouse with schemas enabled**
+   - Command: `fab mkdir "LAUW (Fabric).Workspace/lh_lauw_v2.Lakehouse" -P enableSchemas=true`
+   - Verification: `fab api "workspaces/3ef9a44d-af34-4d7b-84ca-068ed4f74a53/lakehouses/{new_id}"` shows `defaultSchema`
+
+2. **Migrate data from old lh_lauw to lh_lauw_v2**
+   - Create migration notebook or use Spark to copy tables
+   - Copy existing `gold_resources` (and any other tables) to new lakehouse
+   - Verification: Tables appear in new lakehouse
+
+3. **Update workspace_metadata with new lakehouse ID**
+   - Update `nb_seed_workspace_metadata.Notebook` with new lakehouse ID
+   - Re-run seed notebook to update `silver.workspace_metadata`
+   - Verification: `silver.workspace_metadata` has new LAUW lakehouse ID and OneLake path
+
+4. **Delete old lh_lauw lakehouse**
+   - Command: `fab rm "LAUW (Fabric).Workspace/lh_lauw.Lakehouse"` (or via UI)
+   - Verification: Only lh_lauw_v2 exists
+
+5. **Rename lh_lauw_v2 to lh_lauw** (if supported, otherwise keep v2 name)
+   - Via Fabric UI or API
+   - Update workspace_metadata if name changes
+
+6. **Verify VIA LINK already schema-enabled**
    - Already confirmed: has `defaultSchema: "dbo"`
-   - No action needed
+   - No action needed for lakehouse itself
 
 ### Phase 2: Update Notebooks for `gold` Schema Path
 
@@ -114,13 +134,11 @@ Standardize on `gold` schema for gold tables across all tenant lakehouses.
 **Notebooks:**
 - `pbisync/sophiadata/Notebooks/nb_silver_to_gold_cr_qa_results_vialink.Notebook/notebook-content.py`
 - `pbisync/sophiadata/nb_route_gold_resources_to_tenants.Notebook/notebook-content.py`
+- `pbisync/sophiadata/nb_seed_workspace_metadata.Notebook/notebook-content.py` - update LAUW lakehouse ID
 
 **Documentation:**
 - `docs/patterns/cross-workspace-gold-table-writes.md`
 - `CLAUDE.md`
-
-**No changes needed:**
-- `nb_seed_workspace_metadata.Notebook` - onelake_path still ends with `/Tables` (schema added by notebooks)
 
 ### Verification
 
