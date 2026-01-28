@@ -4,11 +4,12 @@
 - id: bug-gradient-animation-not-working-108
 - project: personal/flywheel-gsd
 - created: 2026-01-27
-- status: review
+- status: done
 - unattended: true
 - workflow: worktree
 - tmux-session: flywheel-flywheel-gsd-bug-gradient-animation-not-working-108
 - assigned-session:
+- pr: https://github.com/btcsellis/Flywheel.GSD/pull/23
 
 ## Description
 
@@ -88,3 +89,6 @@ The gradient animation on dashboard cards (indicating a work item is being activ
 - 2026-01-28T00:08:00.000Z Build passes (next build) with no type errors
 - 2026-01-28T00:09:00.000Z Browser verification: dashboard shows "1 transitioning", worktree prompt file detected for superpower plugin item
 - 2026-01-28T00:10:00.000Z All success criteria verified, transitioning to review
+- 2026-01-28T00:12:00.000Z Committed and pushed (7c3628d)
+- 2026-01-28T00:12:00.000Z PR created: https://github.com/btcsellis/Flywheel.GSD/pull/23
+- 2026-01-28T00:12:00.000Z Work item completed
