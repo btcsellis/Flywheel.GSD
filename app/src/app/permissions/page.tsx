@@ -762,7 +762,10 @@ export default function PermissionsPage() {
                               idx % 2 === 0 && 'bg-zinc-900/20'
                             )}
                           >
-                            <td className="p-3 pl-8 sticky left-0 bg-inherit">
+                            <td className={cn(
+                              "p-3 pl-8 sticky left-0 z-10 bg-zinc-900 group-hover:bg-zinc-800",
+                              idx % 2 === 0 && "bg-[#131316]"
+                            )}>
                               <div className="flex items-center gap-2">
                                 <div className="text-sm font-mono text-zinc-200" title={rule}>
                                   {formatRule(rule)}
