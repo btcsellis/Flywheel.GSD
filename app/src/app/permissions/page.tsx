@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { Check, Loader2, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Check, Loader2, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProjectRulesState {
@@ -32,6 +32,95 @@ const AREA_LABELS: Record<string, string> = {
 };
 
 const AREA_ORDER = ['bellwether', 'sophia', 'personal'];
+
+// Category definitions with display order
+const CATEGORY_ORDER = [
+  'File Operations',
+  'Git Commands',
+  'Testing',
+  'Build & Lint',
+  'Package Management',
+  'GitHub CLI',
+  'Flywheel Skills',
+  'Other',
+] as const;
+
+type Category = (typeof CATEGORY_ORDER)[number];
+
+/**
+ * Categorize a rule into one of the predefined categories
+ */
+function categorizeRule(rule: string): Category {
+  // File Operations: Read, Edit, Write
+  if (rule.startsWith('Read') || rule.startsWith('Edit') || rule.startsWith('Write')) {
+    return 'File Operations';
+  }
+
+  // Git Commands
+  if (rule.startsWith('Bash(git ') || rule.startsWith('Bash(git:') || rule === 'Bash(git)') {
+    return 'Git Commands';
+  }
+
+  // Testing
+  if (
+    rule.includes('npm test') ||
+    rule.includes('npm run test') ||
+    rule.includes('npx jest') ||
+    rule.includes('pytest') ||
+    rule.includes('cargo test') ||
+    rule.includes('go test')
+  ) {
+    return 'Testing';
+  }
+
+  // Build & Lint
+  if (
+    rule.includes('npm run build') ||
+    rule.includes('npx tsc') ||
+    rule.includes('tsc:') ||
+    rule.includes('npx next build') ||
+    rule.includes('cargo build') ||
+    rule.includes('go build') ||
+    rule.includes('npm run lint') ||
+    rule.includes('npx eslint') ||
+    rule.includes('eslint:') ||
+    rule.includes('npx prettier') ||
+    rule.includes('prettier:') ||
+    rule.includes('npm run format') ||
+    rule.includes('npm run typecheck')
+  ) {
+    return 'Build & Lint';
+  }
+
+  // Package Management
+  if (
+    rule.includes('npm install') ||
+    rule.includes('npm ci') ||
+    rule.includes('npm i:') ||
+    rule.includes('pip install') ||
+    rule.includes('cargo add') ||
+    rule.includes('go get') ||
+    rule.includes('npm list') ||
+    rule.includes('npm outdated') ||
+    rule.includes('npm info') ||
+    rule.includes('npm ls') ||
+    rule.includes('npm view')
+  ) {
+    return 'Package Management';
+  }
+
+  // GitHub CLI
+  if (rule.startsWith('Bash(gh ') || rule.startsWith('Bash(gh:')) {
+    return 'GitHub CLI';
+  }
+
+  // Flywheel Skills
+  if (rule.startsWith('Skill(flywheel-')) {
+    return 'Flywheel Skills';
+  }
+
+  return 'Other';
+}
 
 /**
  * Parse a rule string into tool and pattern components
@@ -66,7 +155,6 @@ function Checkbox({
   disabled?: boolean;
   disabledChecked?: boolean;
 }) {
-  // Special state: disabled but should appear checked (for global-enabled rules)
   const isDisabledChecked = disabled && disabledChecked;
   const isChecked = checked || isDisabledChecked;
 
@@ -97,6 +185,36 @@ export default function PermissionsPage() {
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Collapse state for categories (rows) - start all collapsed
+  const [expandedCategories, setExpandedCategories] = useState<Set<Category>>(new Set());
+
+  // Collapse state for areas (columns) - start all collapsed
+  const [expandedAreas, setExpandedAreas] = useState<Set<string>>(new Set());
+
+  const toggleCategory = useCallback((category: Category) => {
+    setExpandedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleArea = useCallback((area: string) => {
+    setExpandedAreas((prev) => {
+      const next = new Set(prev);
+      if (next.has(area)) {
+        next.delete(area);
+      } else {
+        next.add(area);
+      }
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     async function fetchPermissions() {
       try {
@@ -124,7 +242,6 @@ export default function PermissionsPage() {
         ? [...permissions.globalEnabled, rule]
         : permissions.globalEnabled.filter((r) => r !== rule);
 
-      // Optimistic update: update global, all area rules, AND all projects (backend cascades to all)
       setPermissions((prev) => {
         if (!prev) return prev;
         const newAreaEnabled = { ...prev.areaEnabled };
@@ -136,7 +253,6 @@ export default function PermissionsPage() {
             newAreaEnabled[area] = current.filter((r) => r !== rule);
           }
         }
-        // Clear drift for this rule since we're syncing
         const newDrift = { ...prev.drift };
         for (const area of AREA_ORDER) {
           if (newDrift[area]) {
@@ -144,7 +260,6 @@ export default function PermissionsPage() {
             if (newDrift[area].length === 0) delete newDrift[area];
           }
         }
-        // Update all projects' enabledRules
         const newProjects = prev.projects.map((project) => {
           if (enabled) {
             return project.enabledRules.includes(rule)
@@ -154,7 +269,13 @@ export default function PermissionsPage() {
             return { ...project, enabledRules: project.enabledRules.filter((r) => r !== rule) };
           }
         });
-        return { ...prev, globalEnabled: newGlobalEnabled, areaEnabled: newAreaEnabled, drift: newDrift, projects: newProjects };
+        return {
+          ...prev,
+          globalEnabled: newGlobalEnabled,
+          areaEnabled: newAreaEnabled,
+          drift: newDrift,
+          projects: newProjects,
+        };
       });
 
       try {
@@ -166,7 +287,6 @@ export default function PermissionsPage() {
 
         if (!res.ok) throw new Error('Failed to save');
       } catch {
-        // Rollback on error — refetch to get accurate state
         setPermissions((prev) =>
           prev
             ? {
@@ -195,10 +315,8 @@ export default function PermissionsPage() {
         ? [...currentAreaRules, rule]
         : currentAreaRules.filter((r) => r !== rule);
 
-      // Optimistic update: update area AND projects in that area (backend cascades to projects)
       setPermissions((prev) => {
         if (!prev) return prev;
-        // Update projects in this area
         const newProjects = prev.projects.map((project) => {
           if (project.area !== areaValue) return project;
           if (enabled) {
@@ -221,16 +339,13 @@ export default function PermissionsPage() {
 
         if (!res.ok) throw new Error('Failed to save');
       } catch {
-        // Rollback on error
         setPermissions((prev) =>
           prev
             ? {
                 ...prev,
                 areaEnabled: {
                   ...prev.areaEnabled,
-                  [areaValue]: enabled
-                    ? currentAreaRules
-                    : [...currentAreaRules, rule],
+                  [areaValue]: enabled ? currentAreaRules : [...currentAreaRules, rule],
                 },
               }
             : prev
@@ -248,9 +363,7 @@ export default function PermissionsPage() {
 
       setSaving(`${projectPath}-${rule}`);
 
-      const projectIndex = permissions.projects.findIndex(
-        (p) => p.projectPath === projectPath
-      );
+      const projectIndex = permissions.projects.findIndex((p) => p.projectPath === projectPath);
       if (projectIndex === -1) return;
 
       const project = permissions.projects[projectIndex];
@@ -258,7 +371,6 @@ export default function PermissionsPage() {
         ? [...project.enabledRules, rule]
         : project.enabledRules.filter((r) => r !== rule);
 
-      // Optimistic update
       setPermissions((prev) => {
         if (!prev) return prev;
         const newProjects = [...prev.projects];
@@ -275,7 +387,6 @@ export default function PermissionsPage() {
 
         if (!res.ok) throw new Error('Failed to save');
       } catch {
-        // Rollback on error
         setPermissions((prev) => {
           if (!prev) return prev;
           const newProjects = [...prev.projects];
@@ -299,7 +410,6 @@ export default function PermissionsPage() {
     try {
       const res = await fetch('/api/permissions/sync', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to sync');
-      // Refetch permissions to get updated state
       const permRes = await fetch('/api/permissions');
       if (permRes.ok) {
         setPermissions(await permRes.json());
@@ -310,6 +420,47 @@ export default function PermissionsPage() {
       setSyncing(false);
     }
   }, []);
+
+  // Group rules by category
+  const groupedRules = useMemo(() => {
+    if (!permissions) return null;
+
+    const groups: Record<Category, string[]> = {
+      'File Operations': [],
+      'Git Commands': [],
+      Testing: [],
+      'Build & Lint': [],
+      'Package Management': [],
+      'GitHub CLI': [],
+      'Flywheel Skills': [],
+      Other: [],
+    };
+
+    for (const rule of permissions.allRules) {
+      const category = categorizeRule(rule);
+      groups[category].push(rule);
+    }
+
+    return groups;
+  }, [permissions]);
+
+  // Calculate area summaries
+  const areaSummaries = useMemo(() => {
+    if (!permissions) return {};
+
+    const summaries: Record<string, { projectCount: number; enabledCount: number }> = {};
+
+    for (const area of AREA_ORDER) {
+      const projects = permissions.projects.filter((p) => p.area === area);
+      const enabledCount = projects.reduce((sum, p) => sum + p.enabledRules.length, 0);
+      summaries[area] = {
+        projectCount: projects.length,
+        enabledCount,
+      };
+    }
+
+    return summaries;
+  }, [permissions]);
 
   if (loading) {
     return (
@@ -327,7 +478,7 @@ export default function PermissionsPage() {
     );
   }
 
-  if (!permissions) {
+  if (!permissions || !groupedRules) {
     return null;
   }
 
@@ -348,21 +499,30 @@ export default function PermissionsPage() {
     areaEnabledSets[area] = new Set(rules);
   }
 
-  // Drift detection: global rules missing from areas
+  // Drift detection
   const driftSets: Record<string, Set<string>> = {};
   const totalDriftCount = Object.entries(permissions.drift || {}).reduce((count, [area, rules]) => {
     driftSets[area] = new Set(rules);
     return count + rules.length;
   }, 0);
 
+  // Calculate column count for header spanning
+  const getAreaColumnCount = (area: string) => {
+    const isExpanded = expandedAreas.has(area);
+    if (isExpanded) {
+      return 1 + (projectsByArea[area]?.length || 0); // area col + project cols
+    }
+    return 1; // just area col
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-zinc-100">Permissions</h1>
         <p className="text-sm text-zinc-400 mt-1">
-          Configure Claude Code auto-permissions for each project. Changes are saved immediately to
-          each project&apos;s <code className="text-zinc-400">.claude/settings.local.json</code>.
-          Global permissions apply to all projects.
+          Configure Claude Code auto-permissions for each project. Changes are saved immediately to each
+          project&apos;s <code className="text-zinc-400">.claude/settings.local.json</code>. Global permissions
+          apply to all projects.
         </p>
       </div>
 
@@ -399,122 +559,199 @@ export default function PermissionsPage() {
                   <div className="text-[10px] text-zinc-500">~/.claude</div>
                 </th>
                 {AREA_ORDER.map((area) => {
+                  const isExpanded = expandedAreas.has(area);
                   const projects = projectsByArea[area] || [];
-                  return [
+                  const summary = areaSummaries[area];
+
+                  return (
                     <th
-                      key={`area-${area}`}
-                      className="p-3 text-sm font-medium text-center min-w-[80px] border-l border-zinc-700/50"
+                      key={`area-header-${area}`}
+                      colSpan={getAreaColumnCount(area)}
+                      className="p-0 border-l-2 border-zinc-700/70"
+                      style={{ borderLeftColor: `${AREA_COLORS[area]}40` }}
                     >
-                      <div className="font-semibold" style={{ color: AREA_COLORS[area] }}>
-                        {AREA_LABELS[area]}
-                      </div>
-                      <div className="text-[10px] text-zinc-500">~/.claude-{area}</div>
-                    </th>,
-                    ...projects.map((project) => (
-                      <th
-                        key={project.projectPath}
-                        className="p-3 text-sm font-medium text-center min-w-[100px]"
-                      >
-                        <div
-                          className="text-zinc-300 truncate"
-                          title={project.projectPath}
-                          style={{ color: AREA_COLORS[area] }}
+                      <div className="flex flex-col">
+                        {/* Area header - always visible, clickable */}
+                        <button
+                          onClick={() => toggleArea(area)}
+                          className="flex items-center justify-center gap-2 p-3 hover:bg-zinc-800/50 transition-colors w-full"
                         >
-                          {project.projectName}
-                        </div>
-                        <div className="text-[10px] text-zinc-500 uppercase">{area}</div>
-                      </th>
-                    )),
-                  ];
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-zinc-500" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-zinc-500" />
+                          )}
+                          <span className="font-semibold" style={{ color: AREA_COLORS[area] }}>
+                            {AREA_LABELS[area]}
+                          </span>
+                          {!isExpanded && summary && (
+                            <span className="text-[10px] text-zinc-500 font-normal">
+                              {summary.projectCount} proj · {summary.enabledCount} enabled
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Project subheaders - only when expanded */}
+                        {isExpanded && projects.length > 0 && (
+                          <div className="flex border-t border-zinc-800/50">
+                            <div className="flex-shrink-0 w-[80px] p-2 text-center border-r border-zinc-800/30">
+                              <div className="text-[10px] text-zinc-500">~/.claude-{area}</div>
+                            </div>
+                            {projects.map((project) => (
+                              <div
+                                key={project.projectPath}
+                                className="flex-1 min-w-[100px] p-2 text-center border-r border-zinc-800/30 last:border-r-0"
+                              >
+                                <div
+                                  className="text-xs truncate font-medium"
+                                  title={project.projectPath}
+                                  style={{ color: AREA_COLORS[area] }}
+                                >
+                                  {project.projectName}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </th>
+                  );
                 })}
               </tr>
             </thead>
             <tbody>
-              {permissions.allRules.map((rule, idx) => {
-                const isGlobalEnabled = globalEnabledSet.has(rule);
-                const isSavingGlobal = saving === `global-${rule}`;
+              {CATEGORY_ORDER.map((category) => {
+                const rules = groupedRules[category];
+                if (rules.length === 0) return null;
+
+                const isCategoryExpanded = expandedCategories.has(category);
+
+                // Calculate total columns for the category header row
+                const totalColumns =
+                  2 + AREA_ORDER.reduce((sum, area) => sum + getAreaColumnCount(area), 0);
 
                 return (
-                  <tr
-                    key={rule}
-                    className={cn(
-                      'border-b border-zinc-800/50 hover:bg-zinc-800/30',
-                      idx % 2 === 0 && 'bg-zinc-900/20'
-                    )}
-                  >
-                    <td className="p-3 sticky left-0 bg-inherit">
-                      <div className="text-sm font-mono text-zinc-200" title={rule}>
-                        {formatRule(rule)}
-                      </div>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex justify-center">
-                        {isSavingGlobal ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-                        ) : (
-                          <Checkbox
-                            checked={isGlobalEnabled}
-                            onChange={(checked) => toggleGlobalRule(rule, checked)}
-                          />
-                        )}
-                      </div>
-                    </td>
-                    {AREA_ORDER.map((area) => {
-                      const projects = projectsByArea[area] || [];
-                      const isAreaEnabled = areaEnabledSets[area]?.has(rule) ?? false;
-                      const isSavingArea = saving === `area:${area}-${rule}`;
-                      const hasDrift = driftSets[area]?.has(rule) ?? false;
-
-                      return [
-                        <td
-                          key={`area-${area}`}
-                          className={cn(
-                            'p-3 text-center border-l border-zinc-700/50',
-                            hasDrift && 'bg-amber-900/15'
+                  <React.Fragment key={category}>
+                    {/* Category header row */}
+                    <tr
+                      className="bg-zinc-800/60 cursor-pointer hover:bg-zinc-800/80 transition-colors"
+                      onClick={() => toggleCategory(category)}
+                    >
+                      <td
+                        colSpan={totalColumns}
+                        className="p-2 sticky left-0 bg-zinc-800/60 hover:bg-zinc-800/80 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          {isCategoryExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-zinc-400" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-zinc-400" />
                           )}
-                        >
-                          <div className="flex justify-center items-center gap-1">
-                            {isSavingArea ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-                            ) : (
-                              <>
-                                <Checkbox
-                                  checked={isAreaEnabled}
-                                  onChange={(checked) => toggleAreaRule(area, rule, checked)}
-                                />
-                                {hasDrift && (
-                                  <span title="Missing from area — set globally but not synced">
-                                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                                  </span>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>,
-                        ...projects.map((project) => {
-                          const isProjectEnabled = project.enabledRules.includes(rule);
-                          const isSavingProject = saving === `${project.projectPath}-${rule}`;
+                          <span className="text-sm font-semibold text-zinc-200">{category}</span>
+                          <span className="text-xs text-zinc-500 bg-zinc-700/50 px-2 py-0.5 rounded-full">
+                            {rules.length} rule{rules.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
 
-                          return (
-                            <td key={project.projectPath} className="p-3 text-center">
+                    {/* Rules in this category - only render when expanded */}
+                    {isCategoryExpanded &&
+                      rules.map((rule, idx) => {
+                        const isGlobalEnabled = globalEnabledSet.has(rule);
+                        const isSavingGlobal = saving === `global-${rule}`;
+
+                        return (
+                          <tr
+                            key={rule}
+                            className={cn(
+                              'border-b border-zinc-800/50 hover:bg-zinc-800/30',
+                              idx % 2 === 0 && 'bg-zinc-900/20'
+                            )}
+                          >
+                            <td className="p-3 pl-8 sticky left-0 bg-inherit">
+                              <div className="text-sm font-mono text-zinc-200" title={rule}>
+                                {formatRule(rule)}
+                              </div>
+                            </td>
+                            <td className="p-3 text-center">
                               <div className="flex justify-center">
-                                {isSavingProject ? (
+                                {isSavingGlobal ? (
                                   <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
                                 ) : (
                                   <Checkbox
-                                    checked={isProjectEnabled}
-                                    onChange={(checked) =>
-                                      toggleProjectRule(project.projectPath, rule, checked)
-                                    }
+                                    checked={isGlobalEnabled}
+                                    onChange={(checked) => toggleGlobalRule(rule, checked)}
                                   />
                                 )}
                               </div>
                             </td>
-                          );
-                        }),
-                      ];
-                    })}
-                  </tr>
+                            {AREA_ORDER.map((area) => {
+                              const isAreaExpanded = expandedAreas.has(area);
+                              const projects = projectsByArea[area] || [];
+                              const isAreaEnabled = areaEnabledSets[area]?.has(rule) ?? false;
+                              const isSavingArea = saving === `area:${area}-${rule}`;
+                              const hasDrift = driftSets[area]?.has(rule) ?? false;
+
+                              return (
+                                <React.Fragment key={`rule-${rule}-area-${area}`}>
+                                  {/* Area checkbox column - always visible */}
+                                  <td
+                                    className={cn(
+                                      'p-3 text-center border-l-2',
+                                      hasDrift && 'bg-amber-900/15'
+                                    )}
+                                    style={{ borderLeftColor: `${AREA_COLORS[area]}40` }}
+                                  >
+                                    <div className="flex justify-center items-center gap-1">
+                                      {isSavingArea ? (
+                                        <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                                      ) : (
+                                        <>
+                                          <Checkbox
+                                            checked={isAreaEnabled}
+                                            onChange={(checked) => toggleAreaRule(area, rule, checked)}
+                                          />
+                                          {hasDrift && (
+                                            <span title="Missing from area — set globally but not synced">
+                                              <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </td>
+
+                                  {/* Project columns - only when area is expanded */}
+                                  {isAreaExpanded &&
+                                    projects.map((project) => {
+                                      const isProjectEnabled = project.enabledRules.includes(rule);
+                                      const isSavingProject = saving === `${project.projectPath}-${rule}`;
+
+                                      return (
+                                        <td key={project.projectPath} className="p-3 text-center">
+                                          <div className="flex justify-center">
+                                            {isSavingProject ? (
+                                              <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                                            ) : (
+                                              <Checkbox
+                                                checked={isProjectEnabled}
+                                                onChange={(checked) =>
+                                                  toggleProjectRule(project.projectPath, rule, checked)
+                                                }
+                                              />
+                                            )}
+                                          </div>
+                                        </td>
+                                      );
+                                    })}
+                                </React.Fragment>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -522,9 +759,7 @@ export default function PermissionsPage() {
         </div>
       </div>
 
-      <div className="text-xs text-zinc-500">
-        {permissions.allRules.length} rules total
-      </div>
+      <div className="text-xs text-zinc-500">{permissions.allRules.length} rules total</div>
     </div>
   );
 }
