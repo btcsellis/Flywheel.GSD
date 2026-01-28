@@ -4,7 +4,7 @@
 - id: add-grouping-to-permissions-page-235
 - project: personal/flywheel-gsd
 - created: 2026-01-28
-- status: planned
+- status: review
 - unattended: true
 - workflow: main
 - tmux-session: flywheel-gsd
@@ -34,15 +34,15 @@ Use `/frontend-design` skill during execution for high design quality.
 
 ## Success Criteria
 
-- [ ] Permission rules are grouped into categories (File Ops, Git, Testing, Build/Lint, Package Mgmt, GitHub CLI, Flywheel, Other)
-- [ ] Categories are collapsible with expand/collapse toggle
-- [ ] Each area column group (Bellwether, Sophia, Personal) is collapsible
-- [ ] Collapsed areas show summary: project count and enabled rule count
-- [ ] Areas start collapsed by default
-- [ ] Expanding an area reveals the area checkbox + all project columns
-- [ ] All existing functionality preserved (checkbox toggling, drift warnings, sync)
-- [ ] No type errors
-- [ ] No lint errors
+- [x] Permission rules are grouped into categories (File Ops, Git, Testing, Build/Lint, Package Mgmt, GitHub CLI, Flywheel, Other)
+- [x] Categories are collapsible with expand/collapse toggle
+- [x] Each area column group (Bellwether, Sophia, Personal) is collapsible
+- [x] Collapsed areas show summary: project count and enabled rule count
+- [x] Areas start collapsed by default
+- [x] Expanding an area reveals the area checkbox + all project columns
+- [x] All existing functionality preserved (checkbox toggling, drift warnings, sync)
+- [x] No type errors
+- [x] No lint errors
 
 ## Notes
 
@@ -166,3 +166,9 @@ Use `/frontend-design` skill during execution for high design quality.
 - 2026-01-28T14:32:26.373Z Work item created
 - 2026-01-28T14:38:00.000Z Goals defined, success criteria added
 - 2026-01-28T14:42:00.000Z Implementation plan created
+- 2026-01-28T14:48:00.000Z Implementation complete: added categorizeRule(), groupedRules, expandedCategories/Areas state, collapsible category rows, collapsible area columns with summaries
+- 2026-01-28T14:50:00.000Z TypeScript check passed (npx tsc --noEmit)
+- 2026-01-28T14:51:00.000Z Lint check passed (permissions page only - pre-existing lint errors in other files)
+- 2026-01-28T14:52:00.000Z Build passed (npm run build)
+- 2026-01-28T14:55:00.000Z Browser verification complete: categories expand/collapse, areas expand/collapse with summaries, checkboxes work
+- 2026-01-28T14:55:00.000Z All success criteria verified, transitioning to review

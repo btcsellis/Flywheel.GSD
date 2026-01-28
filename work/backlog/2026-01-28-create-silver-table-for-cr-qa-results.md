@@ -5,14 +5,16 @@
 - project: sophia/Sophia.Fabric
 - created: 2026-01-28
 - status: new
-- assigned-session:
+- unattended: true
+- workflow: main
+- tmux-session: Sophia-Fabric
+- assigned-session: 
 
 ## Description
 
 We just created the bronze table, now let's create silver in the same lakehouse: lh_sophia_data in the Sophia All Tenants workspace.
 
 ## Success Criteria
-
 
 
 ## Execution Log
