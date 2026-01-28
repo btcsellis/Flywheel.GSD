@@ -34,27 +34,6 @@ Read the work item to understand:
 - Success criteria
 - Current progress (if resuming)
 
-### 1a. Mark as Transitioning (Dashboard Animation)
-
-Create or update the transitioning marker file so the dashboard shows the gradient animation. Always write the marker with the current status, even if one already exists, to ensure each skill phase has the correct `previousStatus`.
-
-```bash
-# Extract work item ID and current status
-WORK_ITEM_ID=$(grep "^- id:" "$WORK_ITEM_PATH" | cut -d: -f2 | xargs)
-CURRENT_STATUS=$(grep "^- status:" "$WORK_ITEM_PATH" | cut -d: -f2 | xargs)
-
-# Always create/update the marker with current status
-cat > "$FLYWHEEL_PATH/.flywheel-transitioning-$WORK_ITEM_ID" << EOF
-{
-  "id": "$WORK_ITEM_ID",
-  "previousStatus": "$CURRENT_STATUS",
-  "startedAt": "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
-}
-EOF
-```
-
-This marker file tells the dashboard to show the card's gradient animation. The dashboard automatically clears it when the status changes.
-
 ### 2. Prepare for Execution
 
 Items remain in `planned` status during execution (with gradient animation in the dashboard).
