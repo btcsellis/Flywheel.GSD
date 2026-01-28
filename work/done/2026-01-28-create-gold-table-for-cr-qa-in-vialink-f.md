@@ -137,3 +137,7 @@ After implementation:
 - 2026-01-28T15:55:00.000Z Ready for /flywheel-done
 - 2026-01-28T15:58:00.000Z Committed and pushed to main (f3e88e0)
 - 2026-01-28T15:58:00.000Z Work item completed
+- 2026-01-28T21:00:00.000Z Post-completion fixes for cross-workspace write path
+- 2026-01-28T21:30:00.000Z Fixed: VIA LINK lakehouse has schemas enabled, requires Tables/dbo/ path
+- 2026-01-28T21:30:00.000Z Final commit: d047a0c - Tables/dbo/ path for schema-enabled lakehouse
+- 2026-01-28T21:35:00.000Z Table confirmed at dbo.gold_cr_qa_results in VIA LINK lakehouse

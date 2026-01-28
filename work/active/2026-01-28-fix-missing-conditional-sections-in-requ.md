@@ -150,4 +150,7 @@ The function gets contact records from the Sophia API and inserts them into Cosm
 - 2026-01-28T21:23:00.000Z Cleanup: Removed duplicate get_document_size function and dead code
 - 2026-01-28T21:24:00.000Z Verified: Python syntax check passed
 - 2026-01-28T21:25:00.000Z All success criteria verified
-- 2026-01-28T21:25:00.000Z Ready for /flywheel-done
+- 2026-01-28T21:30:00.000Z Bug fix: Field values are in record.sectionsData, not sections[].data
+- 2026-01-28T21:35:00.000Z Added sqids dependency and generate_section_uid function for proper uId generation
+- 2026-01-28T21:36:00.000Z Verified uId generation matches existing pattern (crs_[hash]_[sqid])
+- 2026-01-28T21:37:00.000Z Ready for /flywheel-done
