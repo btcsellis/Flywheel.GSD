@@ -4,7 +4,7 @@
 - id: process-scans-automatically-585
 - project: personal/paper-yuck
 - created: 2026-01-28
-- status: planned
+- status: done
 - workflow: main
 - tmux-session: paper-yuck
 - assigned-session:
@@ -21,17 +21,17 @@ Let's make it so that scans are processed automatically, either via a trigger wh
 
 ## Success Criteria
 
-- [ ] `paper-yuck watch` command starts a long-running process that monitors the source folder
-- [ ] New PDFs are detected and processed within seconds of landing in the source folder
-- [ ] Periodic sweep runs on a configurable interval (default: every 5 minutes) to catch missed files
-- [ ] Graceful shutdown on SIGTERM/SIGINT (no partial processing)
-- [ ] LaunchAgent plist file provided for auto-start on login
-- [ ] `paper-yuck service install` command installs the LaunchAgent
-- [ ] `paper-yuck service uninstall` command removes the LaunchAgent
-- [ ] `paper-yuck service status` command shows if service is running
-- [ ] Watch process logs activity to stdout/stderr (viewable via `log show` or redirected by launchd)
-- [ ] All existing tests pass
-- [ ] No type errors
+- [x] `paper-yuck watch` command starts a long-running process that monitors the source folder
+- [x] New PDFs are detected and processed within seconds of landing in the source folder
+- [x] Periodic sweep runs on a configurable interval (default: every 5 minutes) to catch missed files
+- [x] Graceful shutdown on SIGTERM/SIGINT (no partial processing)
+- [x] LaunchAgent plist file provided for auto-start on login
+- [x] `paper-yuck service install` command installs the LaunchAgent
+- [x] `paper-yuck service uninstall` command removes the LaunchAgent
+- [x] `paper-yuck service status` command shows if service is running
+- [x] Watch process logs activity to stdout/stderr (viewable via `log show` or redirected by launchd)
+- [x] All existing tests pass (17 passed)
+- [x] No type errors
 
 ## Implementation Plan
 
@@ -125,3 +125,11 @@ uv run paper-yuck service uninstall  # Should remove and stop
 - 2026-01-28T22:35:00.108Z Work item created
 - 2026-01-28T22:36:00Z Goals defined: watchdog + periodic sweep, launchd service, service management CLI
 - 2026-01-28T22:38:00Z Implementation plan created (4 phases: watcher core, CLI, LaunchAgent, testing)
+- 2026-01-28T22:52:00Z Phase 1 complete: Created watcher/watcher.py, watcher/service.py, updated config.py
+- 2026-01-28T22:52:00Z Phase 2 complete: Added watch and service CLI commands
+- 2026-01-28T22:52:00Z Phase 3 complete: Created LaunchAgent plist and service.py management module
+- 2026-01-28T22:52:00Z Phase 4 complete: Added watcher tests (17 tests pass)
+- 2026-01-28T22:52:00Z All success criteria verified
+- 2026-01-28T22:52:00Z Ready for /flywheel-done
+- 2026-01-28T22:53:00Z Committed (135ea5b) and pushed to main
+- 2026-01-28T22:53:00Z Work item completed
