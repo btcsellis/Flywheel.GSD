@@ -3,6 +3,7 @@ import path from 'path';
 import { getAllWorkItems } from './work-items';
 
 const FLYWHEEL_PATH = process.env.FLYWHEEL_GSD_PATH || path.join(process.env.HOME || '', 'personal', 'flywheel-gsd');
+const WORKTREES_PATH = path.join(path.dirname(FLYWHEEL_PATH), 'flywheel-gsd-worktrees');
 
 export interface TransitioningState {
   id: string;
@@ -92,16 +93,45 @@ export async function getAllTransitioning(): Promise<TransitioningState[]> {
       }
     }
 
-    // Also check for prompt files - these indicate a skill is running
+    // Collect prompt files from FLYWHEEL_PATH and all worktree directories
+    const promptFilePaths: string[] = [];
+
+    // Prompt files in FLYWHEEL_PATH
     const promptFiles = files.filter(f => f.startsWith('.flywheel-prompt-') && f.endsWith('.txt'));
     for (const file of promptFiles) {
+      promptFilePaths.push(path.join(FLYWHEEL_PATH, file));
+    }
+
+    // Prompt files in worktree directories
+    try {
+      const worktreeDirs = await fs.readdir(WORKTREES_PATH);
+      for (const dir of worktreeDirs) {
+        try {
+          const worktreeDir = path.join(WORKTREES_PATH, dir);
+          const stat = await fs.stat(worktreeDir);
+          if (!stat.isDirectory()) continue;
+          const worktreeFiles = await fs.readdir(worktreeDir);
+          for (const file of worktreeFiles) {
+            if (file.startsWith('.flywheel-prompt-') && file.endsWith('.txt')) {
+              promptFilePaths.push(path.join(worktreeDir, file));
+            }
+          }
+        } catch {
+          // Skip inaccessible worktree directories
+        }
+      }
+    } catch {
+      // Worktrees directory doesn't exist, skip
+    }
+
+    // Process all found prompt files
+    for (const filePath of promptFilePaths) {
       try {
-        const promptContent = await fs.readFile(path.join(FLYWHEEL_PATH, file), 'utf-8');
+        const promptContent = await fs.readFile(filePath, 'utf-8');
         const filePathMatch = promptContent.match(/Work item file:\s*(.+\.md)/);
         const statusMatch = promptContent.match(/Current Status:\s*(\w+)/);
 
         if (filePathMatch) {
-          // Read the actual work item file to get the real ID
           let workItemId: string | null = null;
           try {
             const workItemContent = await fs.readFile(filePathMatch[1].trim(), 'utf-8');
@@ -110,12 +140,10 @@ export async function getAllTransitioning(): Promise<TransitioningState[]> {
               workItemId = idMatch[1].trim();
             }
           } catch {
-            // Work item file doesn't exist, skip this prompt
             continue;
           }
 
           if (workItemId) {
-            // Dedup against existing states using the real ID
             const existingState = states.find(s => s.id === workItemId);
             if (!existingState) {
               states.push({
